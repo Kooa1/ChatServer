@@ -6,15 +6,29 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-
 find_package(Qt5 COMPONENTS
         Core
+        Network
+        Sql
         REQUIRED)
 
-add_executable(ChatServer main.cpp)
+add_executable(ChatServer
+        src/main.cpp
+        src/connectsql.cpp
+        include/connectsql.h
+        src/loggingserver.cpp
+        include/loggingserver.h
+)
 target_link_libraries(ChatServer
         Qt5::Core
+        Qt5::Network
+        Qt5::Sql
 )
+
+# 强制编译器检查未初始化的成员变量
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    add_compile_options(-Wall -Wextra -Werror=missing-field-initializers)
+endif()
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)
