@@ -11,7 +11,9 @@ LoggingServer::LoggingServer(QTcpSocket *tcpSocket,QObject *parent) : QObject{pa
 }
 
 void LoggingServer::run() {
-    qDebug() << tcpSocket;
+    connect(tcpSocket, &QTcpSocket::readyRead, this, [this]() {
+        QByteArray accountInfo = tcpSocket->readAll();
+    });
 }
 
 LoggingServer::~LoggingServer()= default;

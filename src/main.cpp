@@ -1,11 +1,14 @@
 #include <QCoreApplication>
-#include <QSqlDatabase>
+#include <vector>
+
 
 #include "../include/connectsql.h"
 #include "../include/loggingserver.h"
 
 int main(int argc, char *argv[]) {
     QCoreApplication a(argc, argv);
+
+
 
     //数据库连接
     const QString hostName = "8.148.211.115";
@@ -28,9 +31,9 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(tcpServer, &QTcpServer::newConnection, [&](){
         QTcpSocket *tcpSocket = tcpServer->nextPendingConnection();
+        tcpSocket->moveToThread(nullptr);
         QThreadPool::globalInstance()->start(new LoggingServer(tcpSocket));
     });
-
 
     return QCoreApplication::exec();
 

@@ -16,13 +16,11 @@ class LoggingServer : public QObject, public QRunnable {
 
 public:
     LoggingServer(QTcpSocket *tcpSocket, QObject *parent = nullptr);
-
     ~LoggingServer() override;
 
     void run() override;
 
 private:
-    unsigned short port = 8111;
     QTcpSocket *tcpSocket;
 };
 
