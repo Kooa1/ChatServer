@@ -5,16 +5,11 @@
 #include "../include/loggingserver.h"
 
 
-LoggingServer::LoggingServer(QTcpSocket *tcpSocket,QObject *parent) : QObject{parent}, QRunnable() {
+LoggingServer::LoggingServer(qintptr socketDescriptor) : socketDescriptor(socketDescriptor), QRunnable() {
     setAutoDelete(true);
-    this->tcpSocket = tcpSocket;
+    qDebug() << socketDescriptor;
 }
 
 void LoggingServer::run() {
-    connect(tcpSocket, &QTcpSocket::readyRead, this, [this]() {
-        QByteArray accountInfo = tcpSocket->readAll();
-    });
+
 }
-
-LoggingServer::~LoggingServer()= default;
-

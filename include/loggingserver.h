@@ -15,13 +15,12 @@ class LoggingServer : public QObject, public QRunnable {
     Q_OBJECT
 
 public:
-    LoggingServer(QTcpSocket *tcpSocket, QObject *parent = nullptr);
-    ~LoggingServer() override;
+    LoggingServer(qintptr socketDescriptor);
 
     void run() override;
 
 private:
-    QTcpSocket *tcpSocket;
+    qintptr socketDescriptor;
 };
 
 
