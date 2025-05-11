@@ -4,12 +4,11 @@
 
 #include "../include/connectsql.h"
 
-
 ConnectSql::ConnectSql(
-        const QString& hostName,
-        const QString& userName,
-        const QString& dbName,
-        const QString& psw,
+        const QString &hostName,
+        const QString &userName,
+        const QString &dbName,
+        const QString &psw,
         const unsigned short int port) {
 
     db = QSqlDatabase::addDatabase("QMYSQL");
@@ -19,11 +18,17 @@ ConnectSql::ConnectSql(
     db.setPassword(psw);
     db.setPort(port);
 
+}
+
+bool ConnectSql::open() {
     if (!db.open()) {
         qDebug() << "mysql conn database failed : " << db.lastError().text();
+        return false;
     } else {
         qDebug() << "mysql conn success";
+        return true;
     }
+
 }
 
 ConnectSql::~ConnectSql() = default;

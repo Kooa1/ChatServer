@@ -3,3 +3,10 @@
 //
 
 #include "../include/registerserver.h"
+
+RegisterServer::RegisterServer(qintptr descriptor, const QJsonObject &json) {
+    this->descriptor = descriptor;
+    this->json = json;
+}
+
+

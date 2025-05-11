@@ -26,6 +26,8 @@ public:
     //析构函数
     ~ConnectSql() override;
 
+    bool open();
+
 private:
     QSqlDatabase db;
 

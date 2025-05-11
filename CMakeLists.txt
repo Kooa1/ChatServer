@@ -22,6 +22,8 @@ add_executable(ChatServer
         include/checkaction.h
         src/registerserver.cpp
         include/registerserver.h
+        src/connectionpool.cpp
+        include/connectionpool.h
 )
 target_link_libraries(ChatServer
         Qt5::Core

@@ -19,8 +19,10 @@ Q_OBJECT
 
 public:
     CheckAction();
+    ~CheckAction() override;
 
 private:
+    QTcpServer *tcpServer;
 };
 
 

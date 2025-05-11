@@ -5,9 +5,23 @@
 #ifndef CHATSERVER_REGISTERSERVER_H
 #define CHATSERVER_REGISTERSERVER_H
 
+#include <QObject>
+#include <QDebug>
+#include <QTcpSocket>
+#include <QJsonObject>
 
-class RegisterServer {
+class RegisterServer : public QObject {
+Q_OBJECT
 
+public:
+    explicit RegisterServer(
+            qintptr descriptor,
+            const QJsonObject &json
+    );
+
+private:
+    qintptr descriptor;
+    QJsonObject json;
 };
 
 
