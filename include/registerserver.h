@@ -9,15 +9,17 @@
 #include <QDebug>
 #include <QTcpSocket>
 #include <QJsonObject>
+#include <QJsonDocument>
 #include <QRandomGenerator>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QDateTime>
 
 class RegisterServer : public QObject, public QRunnable {
 Q_OBJECT
 public:
     explicit RegisterServer(
-            const qintptr descriptor,
+            qintptr descriptor,
             const QJsonObject &json,
             QObject *parent = nullptr
     );
@@ -37,8 +39,10 @@ private:
     QString account;
     QString password;
 
+    QString errorMsg;
+
 private:
-    bool accountIsExists(QString account);
+    bool accountIsExists();
 
     QByteArray salt(int);
 

@@ -14,13 +14,17 @@ RegisterServer::RegisterServer(const qintptr descriptor, const QJsonObject &json
 
     tcpSocket = new QTcpSocket();
     tcpSocket->setSocketDescriptor(descriptor);
-
+    //获取数据库连接
     db = ConnectionPool::instance().getConnection();
+    //检测有效性
     if (!db.isValid()) {
         qDebug() << "get db conn failed, because : " << db.lastError().text();
+        return;
     }
+    //检测是否开启
     if (!db.open()) {
         qDebug() << "open error :" << db.lastError().text();
+        return;
     }
 
     this->account = json["account"].toString();
@@ -28,17 +32,17 @@ RegisterServer::RegisterServer(const qintptr descriptor, const QJsonObject &json
 }
 
 void RegisterServer::run() {
-    if(!accountIsExists(account)) {
+    if(!accountIsExists()) {
 
     }
 }
 
-
-bool RegisterServer::accountIsExists(QString account) {
+//检测账号是否存在
+bool RegisterServer::accountIsExists() {
     QSqlQuery query(db);
     QString sql = "SELECT phone FROM users";
     if (!query.exec(sql)) {
-        qDebug() << query.lastError().text();
+
     }
 
     while (query.next()) {
@@ -50,6 +54,7 @@ bool RegisterServer::accountIsExists(QString account) {
     return true;
 }
 
+//随机盐值
 QByteArray RegisterServer::salt(int length = 32) {
     //创建随机数生成
     QByteArray pwdSalt(length,0);
@@ -63,11 +68,23 @@ QByteArray RegisterServer::salt(int length = 32) {
     return pwdSalt;
 }
 
+//构造注册返回信息
 QByteArray RegisterServer::buildJsonMsg(int code, const QString &msg) {
-    QJsonObject json {
-        {"code", code},
-        {"status", ""},
+    QJsonObject errorInfo {
+            {"code", code},
+            {"client", descriptor},
+            {"status", [](int select){
+                switch (select) {
+                    case 200: return "register success";
+                    case 500: return "server error";
+                    default: return "internal error";
+                }
+            }(code)},
+            {"message", msg},
+            {"timestamp", QDateTime::currentDateTime().toString(Qt::ISODate)}
     };
+
+    return QJsonDocument(json).toJson();
 }
 
 
