@@ -13,6 +13,7 @@
 #include <QTcpServer>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include "../include/registerserver.h"
 
 class CheckAction : public QObject {
 Q_OBJECT
