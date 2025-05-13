@@ -14,24 +14,26 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QDateTime>
+#include <QEventLoop>
 
-class RegisterServer : public QObject, public QRunnable {
+class Worker : public QObject, public QRunnable {
 Q_OBJECT
 public:
-    explicit RegisterServer(
+    explicit Worker(
             qintptr descriptor,
-            const QJsonObject &json,
+            const QJsonObject&,
             QObject *parent = nullptr
     );
 
     void run() override;
 
-    // ~RegisterServer();
+    ~Worker() override;
 
 private:
-    QTcpSocket *tcpSocket;
+    // QTcpSocket *tcpSocket;
 
     qintptr descriptor;
+
     QJsonObject json;
 
     QSqlDatabase db;
@@ -39,12 +41,12 @@ private:
     QString account;
     QString password;
 
-    QString errorMsg;
-
+    //信息构造
+    QByteArray errorJson;
 private:
     bool accountIsExists();
 
-    QByteArray salt(int);
+    static QByteArray salt(int);
 
     QByteArray buildJsonMsg(int, const QString &);
 

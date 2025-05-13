@@ -3,17 +3,14 @@
 //
 
 #include "../include/connectionpool.h"
-#include "../include/registerserver.h"
+#include "../include/worker.h"
 
-RegisterServer::RegisterServer(const qintptr descriptor, const QJsonObject &json, QObject *parent) : QObject(parent), QRunnable() {
+Worker::Worker(const qintptr descriptor,const QJsonObject &json, QObject *parent) : QObject(parent), QRunnable() {
     //自动销毁
     setAutoDelete(true);
 
     this->descriptor = descriptor;
-    this->json = json;
 
-    tcpSocket = new QTcpSocket();
-    tcpSocket->setSocketDescriptor(descriptor);
     //获取数据库连接
     db = ConnectionPool::instance().getConnection();
     //检测有效性
@@ -31,14 +28,13 @@ RegisterServer::RegisterServer(const qintptr descriptor, const QJsonObject &json
     this->password = json["password"].toString();
 }
 
-void RegisterServer::run() {
-    if(!accountIsExists()) {
+void Worker::run() {
 
-    }
 }
 
+
 //检测账号是否存在
-bool RegisterServer::accountIsExists() {
+bool Worker::accountIsExists() {
     QSqlQuery query(db);
     QString sql = "SELECT phone FROM users";
     if (!query.exec(sql)) {
@@ -55,13 +51,13 @@ bool RegisterServer::accountIsExists() {
 }
 
 //随机盐值
-QByteArray RegisterServer::salt(int length = 32) {
+QByteArray Worker::salt(const int len = 32) {
     //创建随机数生成
-    QByteArray pwdSalt(length,0);
+    QByteArray pwdSalt(len,0);
 
     QRandomGenerator::system()->fillRange(
         reinterpret_cast<quint32*>(pwdSalt.data()),
-        length / sizeof(32));
+        len / sizeof(32));
 
     qDebug() << pwdSalt;
 
@@ -69,14 +65,14 @@ QByteArray RegisterServer::salt(int length = 32) {
 }
 
 //构造注册返回信息
-QByteArray RegisterServer::buildJsonMsg(int code, const QString &msg) {
+QByteArray Worker::buildJsonMsg(int code, const QString &msg) {
     QJsonObject errorInfo {
             {"code", code},
             {"client", descriptor},
             {"status", [](int select){
                 switch (select) {
-                    case 200: return "register success";
-                    case 500: return "server error";
+                    case 0x000: return "register error";
+                    case 0x001: return "register success";
                     default: return "internal error";
                 }
             }(code)},
@@ -87,4 +83,4 @@ QByteArray RegisterServer::buildJsonMsg(int code, const QString &msg) {
     return QJsonDocument(json).toJson();
 }
 
-
+Worker::~Worker() = default;

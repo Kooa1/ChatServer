@@ -13,17 +13,25 @@
 #include <QTcpServer>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include "../include/registerserver.h"
+#include <QList>
 
-class CheckAction : public QObject {
+
+class CheckAction : public QTcpServer {
 Q_OBJECT
 
 public:
-    CheckAction();
+    explicit CheckAction(QObject *parent = nullptr, qint16 port = 8111);
     ~CheckAction() override;
 
 private:
-    QTcpServer *tcpServer;
+    QTcpSocket *tcpSocket;
+
+protected:
+    QList<QTcpSocket*> tcpList;
+protected:
+    virtual  void incomingConnection(qintptr descriptor) override;
+
+
 };
 
 

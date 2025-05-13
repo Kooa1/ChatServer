@@ -2,7 +2,6 @@
 
 
 //#include "../include/connectsql.h"
-#include "../include/loggingserver.h"
 #include "../include/checkaction.h"
 #include "../include/connectionpool.h"
 
@@ -31,14 +30,6 @@ int main(int argc, char *argv[]) {
             userName,
             pwd
     );
-
-    //获取连接池
-    // QSqlDatabase db  = ConnectionPool::instance().getConnection();
-    // if (!db.isValid()){
-    //     qDebug() << "Failed to get database connection!";
-    // }else{
-    //     qDebug() << "get ready";
-    // }
 
     //设置线程池最大线程数
     QThreadPool::globalInstance()->setMaxThreadCount(10);

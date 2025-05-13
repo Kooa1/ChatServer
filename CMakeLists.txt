@@ -16,12 +16,10 @@ add_executable(ChatServer
         src/main.cpp
         src/connectsql.cpp
         include/connectsql.h
-        src/loggingserver.cpp
-        include/loggingserver.h
         src/checkaction.cpp
         include/checkaction.h
-        src/registerserver.cpp
-        include/registerserver.h
+        src/Worker.cpp
+        include/Worker.h
         src/connectionpool.cpp
         include/connectionpool.h
 )
