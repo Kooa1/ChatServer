@@ -10,28 +10,42 @@ Worker::Worker(const qintptr descriptor,const QJsonObject &json, QObject *parent
     setAutoDelete(true);
 
     this->descriptor = descriptor;
+    tcpSocket = new QTcpSocket();
+    tcpSocket->setSocketDescriptor(descriptor);
 
     //获取数据库连接
     db = ConnectionPool::instance().getConnection();
     //检测有效性
     if (!db.isValid()) {
+        ConnectionPool::instance().releaseConnection(db);
         qDebug() << "get db conn failed, because : " << db.lastError().text();
         return;
     }
     //检测是否开启
     if (!db.open()) {
+        ConnectionPool::instance().releaseConnection(db);
         qDebug() << "open error :" << db.lastError().text();
         return;
     }
 
     this->account = json["account"].toString();
     this->password = json["password"].toString();
+
+    qDebug() << "ready";
 }
 
 void Worker::run() {
 
-}
+    QEventLoop loop;
 
+
+    connect(tcpSocket, &QTcpSocket::connected, [=]() {
+        tcpSocket->write("0x000");
+        tcpSocket->waitForBytesWritten();
+    });
+
+    loop.exec();
+}
 
 //检测账号是否存在
 bool Worker::accountIsExists() {
@@ -44,6 +58,7 @@ bool Worker::accountIsExists() {
     while (query.next()) {
         if (query.value(0).toString() == json["account"].toString()) {
             qDebug() << "account is Exists, is :" << query.value(0).toString();
+            ConnectionPool::instance().releaseConnection(db);
             return false;
         }
     }
@@ -83,4 +98,5 @@ QByteArray Worker::buildJsonMsg(int code, const QString &msg) {
     return QJsonDocument(json).toJson();
 }
 
-Worker::~Worker() = default;
+Worker::~Worker() {
+};

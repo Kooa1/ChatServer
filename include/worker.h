@@ -30,10 +30,9 @@ public:
     ~Worker() override;
 
 private:
-    // QTcpSocket *tcpSocket;
+    QTcpSocket *tcpSocket;
 
     qintptr descriptor;
-
     QJsonObject json;
 
     QSqlDatabase db;
