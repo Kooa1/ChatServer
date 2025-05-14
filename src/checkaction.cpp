@@ -19,12 +19,17 @@ void CheckAction::incomingConnection(qintptr descriptor) {
     tcpSocket->setSocketDescriptor(descriptor);
     tcpList.append(tcpSocket);
     userPool++;
+
+
     connect(tcpSocket, &QTcpSocket::readyRead, [&](){
         QByteArray data = tcpSocket->readAll();
         QJsonObject json = QJsonDocument::fromJson(data).object();
         if (json["action"] == "register") {
             qDebug() << "1";
-            QThreadPool::globalInstance()->start(new Worker(descriptor, json));
+            Worker *worker = new Worker();
+            connect(this, &CheckAction::sendInfo, worker, &Worker::recvInfo);
+            emit sendInfo(1, descriptor, json);
+            QThreadPool::globalInstance()->start(worker);
         }
     });
 }

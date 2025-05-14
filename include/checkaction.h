@@ -32,7 +32,8 @@ protected:
 protected:
     virtual void incomingConnection(qintptr descriptor) override;
 
-
+signals:
+    void sendInfo(int workType, qintptr descriptor, const QJsonObject&);
 };
 
 

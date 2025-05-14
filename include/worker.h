@@ -10,46 +10,30 @@
 #include <QTcpSocket>
 #include <QJsonObject>
 #include <QJsonDocument>
-#include <QRandomGenerator>
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QDateTime>
+
 #include <QEventLoop>
 
 class Worker : public QObject, public QRunnable {
 Q_OBJECT
 public:
-    explicit Worker(
-            qintptr descriptor,
-            const QJsonObject&,
-            QObject *parent = nullptr
-    );
+    explicit Worker(QObject *parent = nullptr);
 
     void run() override;
 
     ~Worker() override;
 
+    void recvInfo(int workType, qintptr descriptor, const QJsonObject&);
 private:
     QTcpSocket *tcpSocket;
-
     qintptr descriptor;
     QJsonObject json;
-
-    QSqlDatabase db;
-
-    QString account;
-    QString password;
+    int workType;
 
     //信息构造
     QByteArray errorJson;
-private:
-    bool accountIsExists();
 
-    static QByteArray salt(int);
+signals:
 
-    QByteArray buildJsonMsg(int, const QString &);
-
-    // bool insertDb(QString, QString, )
 };
 
 
