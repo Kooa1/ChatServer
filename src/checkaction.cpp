@@ -3,7 +3,7 @@
 //
 
 #include "../include/checkaction.h"
-#include "../include/worker.h"
+#include "../include/register.h"
 
 CheckAction::CheckAction(QObject *parent, qint16 port) : QTcpServer(parent){
     this->listen(QHostAddress::Any, port);
@@ -17,20 +17,20 @@ CheckAction::~CheckAction() = default;
 void CheckAction::incomingConnection(qintptr descriptor) {
     tcpSocket = new QTcpSocket();
     tcpSocket->setSocketDescriptor(descriptor);
-    tcpList.append(tcpSocket);
-    userPool++;
-
 
     connect(tcpSocket, &QTcpSocket::readyRead, [&](){
         QByteArray data = tcpSocket->readAll();
         QJsonObject json = QJsonDocument::fromJson(data).object();
         if (json["action"] == "register") {
             qDebug() << "1";
-            Worker *worker = new Worker();
-            connect(this, &CheckAction::sendInfo, worker, &Worker::recvInfo);
-            emit sendInfo(1, descriptor, json);
-            QThreadPool::globalInstance()->start(worker);
+            QThreadPool::globalInstance()->start(new Register(json,
+                [](const QJsonObject &result) {
+                    qDebug() << result["status"];
+            }));
+        } else {
+            qDebug() << "other";
         }
     });
 }
+
 

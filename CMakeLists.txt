@@ -18,8 +18,6 @@ add_executable(ChatServer
         include/connectsql.h
         src/checkaction.cpp
         include/checkaction.h
-        src/worker.cpp
-        include/worker.h
         src/connectionpool.cpp
         include/connectionpool.h
         include/register.cpp

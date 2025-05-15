@@ -23,17 +23,11 @@ public:
     explicit CheckAction(QObject *parent = nullptr, qint16 port = 8111);
     ~CheckAction() override;
 
-    int userPool = 0;
 private:
     QTcpSocket *tcpSocket;
 
 protected:
-    QList<QTcpSocket*> tcpList;
-protected:
     virtual void incomingConnection(qintptr descriptor) override;
-
-signals:
-    void sendInfo(int workType, qintptr descriptor, const QJsonObject&);
 };
 
 

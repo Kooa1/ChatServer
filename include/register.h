@@ -13,28 +13,41 @@
 #include <QJsonDocument>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QTcpSocket>
+#include <QEventLoop>
 
 
-class Register : public QObject, public QRunnable{
-Q_OBJECT
+class Register : public QRunnable{
 
 public:
-    explicit Register(QObject *parent = nullptr);
+    //回调函数声明
+    using ResultCallback = std::function<void(const QJsonObject&)>;
 
+    explicit Register(QJsonObject, ResultCallback callback);
+
+    //重载
     void run() override;
 
 private:
+    //有参构造用户信息
     QString account;
     QString password;
-
     QJsonObject json;
 
+    //回调函数返回值
+    QJsonObject result;
+    //错误信息
+    QString errorMsg;
+    //回调函数
+    ResultCallback m_callback;
 private:
-    bool accountIsExists();
+    bool acIsExists();
 
-    static QByteArray salt(int);
+    static QByteArray salt(const int);
 
-    QByteArray buildJsonMsg(int, const QString &);
+    QJsonObject buildJsonMsg(int, const QString &);
+
+    QObject *recvTarget{};
 };
 
 

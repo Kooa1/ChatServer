@@ -45,14 +45,14 @@ QSqlDatabase ConnectionPool::getConnection() {
 
     //
     if(!connQueue.isEmpty()){
-        qDebug() << "db get ready";
+        // qDebug() << "db get ready";
         return connQueue.dequeue();
     }
 
     if(currConn < maxConnections){
         QSqlDatabase conn = createConnection();
         if(conn.isOpen()){
-            qDebug() << "new db get ready";
+            // qDebug() << "new db get ready";
             return conn;
         }
     }
