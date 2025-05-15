@@ -21,18 +21,20 @@ class Register : public QRunnable{
 
 public:
     //回调函数声明
-    using ResultCallback = std::function<void(const QJsonObject&)>;
+    using ResultCallback = std::function<void(int tcpId, const QJsonObject&)>;
 
-    explicit Register(QJsonObject, ResultCallback callback);
+    explicit Register(int, QJsonObject, ResultCallback callback);
 
     //重载
     void run() override;
 
 private:
     //有参构造用户信息
+    QJsonObject json;
     QString account;
     QString password;
-    QJsonObject json;
+    QString Salt;
+    int tcpId;
 
     //回调函数返回值
     QJsonObject result;
@@ -40,14 +42,16 @@ private:
     QString errorMsg;
     //回调函数
     ResultCallback m_callback;
+
 private:
     bool acIsExists();
 
     static QByteArray salt(const int);
 
-    QJsonObject buildJsonMsg(int, const QString &);
+    bool insertInfoDB();
 
-    QObject *recvTarget{};
+    static QJsonObject buildJsonMsg(int tcpId, int, const QString &);
+
 };
 
 

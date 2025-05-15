@@ -18,14 +18,28 @@ void CheckAction::incomingConnection(qintptr descriptor) {
     tcpSocket = new QTcpSocket();
     tcpSocket->setSocketDescriptor(descriptor);
 
+    TcpInfo node = {descriptor, tcpSocket};
+
+    {
+        QMutexLocker locker(&sendMutex);
+        tcpMap.insert(++tcpId, node);
+    }
+
+    qDebug() << tcpId;
+
     connect(tcpSocket, &QTcpSocket::readyRead, [&](){
         QByteArray data = tcpSocket->readAll();
         QJsonObject json = QJsonDocument::fromJson(data).object();
         if (json["action"] == "register") {
-            qDebug() << "1";
-            QThreadPool::globalInstance()->start(new Register(json,
-                [](const QJsonObject &result) {
-                    qDebug() << result["status"];
+            QThreadPool::globalInstance()->start(new Register(tcpId, json,
+                [this](int resId, const QJsonObject &result) {
+                QMetaObject::invokeMethod(
+                        this,
+                        "sendResponse",
+                        Qt::QueuedConnection,
+                        Q_ARG(int, resId),
+                        Q_ARG(QJsonObject, result)
+                );
             }));
         } else {
             qDebug() << "other";
@@ -33,4 +47,11 @@ void CheckAction::incomingConnection(qintptr descriptor) {
     });
 }
 
+void CheckAction::sendResponse(int id, QJsonObject result) {
+    QMutexLocker locker(&sendMutex);
+
+    TcpInfo socket = tcpMap.value(id);
+    socket.tcp->write("1");
+    tcpMap.remove(id);
+}
 

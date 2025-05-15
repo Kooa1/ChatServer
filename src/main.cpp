@@ -30,10 +30,6 @@ int main(int argc, char *argv[]) {
             userName,
             pwd
     );
-
-    //设置线程池最大线程数
-    QThreadPool::globalInstance()->setMaxThreadCount(10);
-
     //监听请求类型
     CheckAction checking;
 
