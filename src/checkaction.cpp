@@ -4,33 +4,40 @@
 
 #include "../include/checkaction.h"
 #include "../include/register.h"
+#include "../include/login.h"
 
 CheckAction::CheckAction(QObject *parent, qint16 port) : QTcpServer(parent){
+    QThreadPool::globalInstance()->setMaxThreadCount(2);
+
+    login = new QThread();
+    Login *worker = new Login;
+    worker->moveToThread(login);
+    login->start();
+
+    connect(this, &CheckAction::sendLoginData, worker, &Login::recvData);
+
+
+
     this->listen(QHostAddress::Any, port);
     if (this->isListening()) {
         qDebug() << "success";
     }
 }
 
-CheckAction::~CheckAction() = default;
-
 void CheckAction::incomingConnection(qintptr descriptor) {
     tcpSocket = new QTcpSocket();
     tcpSocket->setSocketDescriptor(descriptor);
-
-    TcpInfo node = {descriptor, tcpSocket};
-
-    {
-        QMutexLocker locker(&sendMutex);
-        tcpMap.insert(++tcpId, node);
-    }
-
-    qDebug() << tcpId;
 
     connect(tcpSocket, &QTcpSocket::readyRead, [&](){
         QByteArray data = tcpSocket->readAll();
         QJsonObject json = QJsonDocument::fromJson(data).object();
         if (json["action"] == "register") {
+            TcpInfo node = {descriptor, tcpSocket};{
+                //共享数据上锁
+                QMutexLocker locker(&sendMutex);
+                regHash.insert(++tcpId, node);
+            }
+            //启动线程,调用类内回调函数,invokeMethod向主线程槽函数发送信号
             QThreadPool::globalInstance()->start(new Register(tcpId, json,
                 [this](int resId, const QJsonObject &result) {
                 QMetaObject::invokeMethod(
@@ -41,17 +48,22 @@ void CheckAction::incomingConnection(qintptr descriptor) {
                         Q_ARG(QJsonObject, result)
                 );
             }));
-        } else {
-            qDebug() << "other";
         }
+
+        emit sendLoginData(descriptor, json);
+
     });
 }
 
 void CheckAction::sendResponse(int id, QJsonObject result) {
+    //共享数据上锁
     QMutexLocker locker(&sendMutex);
-
-    TcpInfo socket = tcpMap.value(id);
+    TcpInfo socket = regHash.value(id);
     socket.tcp->write("1");
-    tcpMap.remove(id);
+    regHash.remove(id);
 }
 
+CheckAction::~CheckAction() {
+    login->wait();
+    login->deleteLater();
+}

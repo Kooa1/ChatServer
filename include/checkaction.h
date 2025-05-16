@@ -9,6 +9,7 @@
 #include <QRunnable>
 #include <QTcpSocket>
 #include <QDebug>
+#include <QThread>
 #include <QThreadPool>
 #include <QTcpServer>
 #include <QJsonDocument>
@@ -30,19 +31,23 @@ public:
     ~CheckAction() override;
 
 public slots:
+    //注册结果槽函数
     void sendResponse(int id, QJsonObject result);
 
 private:
-    QTcpSocket *tcpSocket;
-
+    QTcpSocket *tcpSocket{};
+    //注册数据
     int tcpId = 0;
-
-    QMap<int, TcpInfo> tcpMap;
-
     QMutex sendMutex;
+    QHash<int, TcpInfo> regHash;
+
+    QThread *login;
 
 protected:
-    virtual void incomingConnection(qintptr descriptor) override;
+    void incomingConnection(qintptr descriptor) override;
+
+signals:
+    void sendLoginData(qintptr, const QJsonObject&);
 };
 
 

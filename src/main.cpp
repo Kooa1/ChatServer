@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
             userName,
             pwd
     );
+
     //监听请求类型
     CheckAction checking;
 
