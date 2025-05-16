@@ -7,21 +7,29 @@
 
 #include <QObject>
 #include <QJsonObject>
+#include <QQueue>
+#include <QThread>
+#include <QEventLoop>
 
 class Login : public QObject{
 Q_OBJECT
 
 public:
-    explicit Login(QObject *parent = nullptr);
-
-
+    explicit Login();
 
 public slots:
+    void worker();
+
     void recvData(qintptr, const QJsonObject &);
 
 private:
     qintptr descriptor;
     QJsonObject json;
+
+private:
+    QQueue<QThread*> threadPool;
+
+
 
 };
 

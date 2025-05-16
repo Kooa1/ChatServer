@@ -9,14 +9,13 @@
 CheckAction::CheckAction(QObject *parent, qint16 port) : QTcpServer(parent){
     QThreadPool::globalInstance()->setMaxThreadCount(2);
 
-    login = new QThread();
-    Login *worker = new Login;
-    worker->moveToThread(login);
-    login->start();
+    thread = new QThread;
+    Login *login = new Login;
+    login->moveToThread(thread);
+    thread->start();
 
-    connect(this, &CheckAction::sendLoginData, worker, &Login::recvData);
-
-
+    connect(this, &CheckAction::sendLoginData, login, &Login::recvData);
+    connect(this, &CheckAction::startWorker, login, &Login::worker);
 
     this->listen(QHostAddress::Any, port);
     if (this->isListening()) {
@@ -27,7 +26,7 @@ CheckAction::CheckAction(QObject *parent, qint16 port) : QTcpServer(parent){
 void CheckAction::incomingConnection(qintptr descriptor) {
     tcpSocket = new QTcpSocket();
     tcpSocket->setSocketDescriptor(descriptor);
-
+    qDebug() << descriptor;
     connect(tcpSocket, &QTcpSocket::readyRead, [&](){
         QByteArray data = tcpSocket->readAll();
         QJsonObject json = QJsonDocument::fromJson(data).object();
@@ -50,9 +49,12 @@ void CheckAction::incomingConnection(qintptr descriptor) {
             }));
         }
 
-        emit sendLoginData(descriptor, json);
-
+        qDebug() << "other";
+        qDebug() << tcpSocket->socketDescriptor();
+        emit sendLoginData(tcpSocket->socketDescriptor(), json);
+        emit startWorker();
     });
+
 }
 
 void CheckAction::sendResponse(int id, QJsonObject result) {
@@ -63,7 +65,4 @@ void CheckAction::sendResponse(int id, QJsonObject result) {
     regHash.remove(id);
 }
 
-CheckAction::~CheckAction() {
-    login->wait();
-    login->deleteLater();
-}
+CheckAction::~CheckAction() = default;

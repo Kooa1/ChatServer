@@ -41,12 +41,14 @@ private:
     QMutex sendMutex;
     QHash<int, TcpInfo> regHash;
 
-    QThread *login;
+    QThread *thread;
+
 
 protected:
     void incomingConnection(qintptr descriptor) override;
 
 signals:
+    void startWorker();
     void sendLoginData(qintptr, const QJsonObject&);
 };
 
