@@ -6,14 +6,19 @@
 #define CHATSERVER_LOGIN_H
 
 #include <QHash>
+#include <QDebug>
 #include <QQueue>
 #include <QMutex>
 #include <QObject>
 #include <QThread>
+#include <QSqlQuery>
 #include <QEventLoop>
 #include <QTcpSocket>
 #include <QJsonObject>
+#include <QJsonObject>
+#include <QSqlDatabase>
 #include <QMutexLocker>
+#include <QJsonDocument>
 
 class Login : public QObject{
 Q_OBJECT
@@ -26,7 +31,7 @@ struct ThreadInfo{
 
 public:
     explicit Login();
-    ~Login();
+    ~Login() override;
 
 public slots:
     //工作函数
@@ -34,12 +39,17 @@ public slots:
     //数据接收函数
     void recvData(qintptr, const QJsonObject &);
 
+    void onReadyRead();
+
+    void onDisconnect();
+
 private:
     //数据接收
     QMutex queueMutex;//队列锁
     QQueue<QPair<qintptr, QJsonObject>> taskQueue;
-    qintptr descriptor;
-    QJsonObject json;
+
+    //错误信息
+    QString errorMsg;
 
     //活跃用户哈希表
     QHash<qintptr, QTcpSocket*> userPool;
@@ -53,8 +63,14 @@ private:
     //关闭线程
     void destroy();
     //工作分配
-    void assignTask(qintptr);
+//    void assignTask(qintptr);
 
+    bool loginResult(const QJsonObject &);
+
+    static QJsonObject buildJsonMsg(int, const QString &);
+
+signals:
+    void initSocketComplete();
 };
 
 #endif //CHATSERVER_LOGIN_H

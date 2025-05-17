@@ -5,7 +5,8 @@
 #include "../include/register.h"
 #include "../include/connectionpool.h"
 
-Register::Register(const int tcpId, QJsonObject json, ResultCallback callback) : QRunnable(), m_callback(std::move(callback)) {
+Register::Register(const int tcpId, QJsonObject json, ResultCallback callback)
+        : QRunnable(), m_callback(std::move(callback)) {
     setAutoDelete(true);
     this->account = json["account"].toString();
     this->password = json["password"].toString();
@@ -22,7 +23,7 @@ void Register::run() {
     }
     if (!acIsExists()) {
 
-        if (!insertInfoDB()){
+        if (!insertInfoDB()) {
             result = buildJsonMsg(tcpId, 0x002, errorMsg);
             m_callback(tcpId, result);
             return;
@@ -36,8 +37,7 @@ void Register::run() {
 
 
 //随机盐值
-QByteArray Register::salt(int len)
-{
+QByteArray Register::salt(int len) {
     if (len <= 0) {
         len = 32;
     }
@@ -46,7 +46,7 @@ QByteArray Register::salt(int len)
 
     // 使用系统提供的密码学安全随机数
     QRandomGenerator::system()->fillRange(
-            reinterpret_cast<quint32*>(pwdSalt.data()),
+            reinterpret_cast<quint32 *>(pwdSalt.data()),
             (len + sizeof(quint32) - 1) / sizeof(quint32));
 
     // 确保返回正确长度
@@ -84,10 +84,12 @@ bool Register::acIsExists() {
 
     while (query.next()) {
         if (query.value(0).toString() == account) {
-            errorMsg = db.lastError().text();
             qDebug() << "account is Exists, is :" << query.value(0).toString();
             ConnectionPool::instance().releaseConnection(db);
             return true;
+        } else {
+            errorMsg = query.lastError().text();
+            return false;
         }
     }
     return false;
@@ -122,7 +124,7 @@ bool Register::insertInfoDB() {
     query.addBindValue(password + Salt);
     query.addBindValue(Salt);
 
-    if(!query.exec()){
+    if (!query.exec()) {
         qDebug() << "insert error ,account : " << account;
         db.rollback();
         ConnectionPool::instance().releaseConnection(db);
@@ -135,13 +137,13 @@ bool Register::insertInfoDB() {
 
 //构造注册返回信息
 QJsonObject Register::buildJsonMsg(const int tcpId, int code, const QString &msg) {
-    QJsonObject errorInfo{
-            {"id", tcpId},
-            {"code", code},
-            {"status", [](int select) {
+    QJsonObject Info{
+            {"id",        tcpId},
+            {"code",      code},
+            {"status",    [](int select) {
                 switch (select) {
                     case 0x000:
-                        return "Error : The account already exists.";
+                        return "Error : The account already exists";
                     case 0x001:
                         return "Registration successful";
                     default:
@@ -152,6 +154,5 @@ QJsonObject Register::buildJsonMsg(const int tcpId, int code, const QString &msg
             {"timestamp", QDateTime::currentDateTime().toString(Qt::ISODate)}
     };
 
-    return errorInfo;
+    return Info;
 }
-

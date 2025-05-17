@@ -25,8 +25,8 @@ add_executable(ChatServer
         src/login.cpp
         include/login.h
         include/login.h
-        tcppool.cpp
-        tcppool.h
+        src/tools.cpp
+        include/tools.h
 )
 target_link_libraries(ChatServer
         Qt5::Core

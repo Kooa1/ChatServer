@@ -16,6 +16,10 @@ CheckAction::CheckAction(QObject *parent, qint16 port) : QTcpServer(parent){
 
     connect(this, &CheckAction::sendLoginData, login, &Login::recvData);
     connect(this, &CheckAction::startWorker, login, &Login::worker);
+    connect(login, &Login::initSocketComplete, this, [=](){
+        tcpSocket->abort();
+        qDebug() << "2";
+    });
 
     this->listen(QHostAddress::Any, port);
     if (this->isListening()) {
@@ -46,11 +50,12 @@ void CheckAction::incomingConnection(qintptr descriptor) {
                         Q_ARG(QJsonObject, result)
                 );
             }));
-            return;
+//            return;
         }
         if (json["action"] == "login"){
-//            qDebug() << "other";
+//            qDebug() << json["account"].toString();
 //            qDebug() << tcpSocket->socketDescriptor();
+
             emit sendLoginData(tcpSocket->socketDescriptor(), json);
             emit startWorker();
             return;
