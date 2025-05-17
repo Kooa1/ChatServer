@@ -5,26 +5,21 @@
 #ifndef CHATSERVER_CHECKACTION_H
 #define CHATSERVER_CHECKACTION_H
 
-#include <QObject>
-#include <QRunnable>
-#include <QTcpSocket>
-#include <QDebug>
-#include <QThread>
-#include <QThreadPool>
-#include <QTcpServer>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QMap>
 #include <QMutex>
+#include <QDebug>
+#include <QThread>
+#include <QObject>
+#include <QRunnable>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QThreadPool>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 
 class CheckAction : public QTcpServer {
 Q_OBJECT
-
-struct TcpInfo{
-    qintptr descriptor;
-    QTcpSocket* tcp;
-};
 
 public:
     explicit CheckAction(QObject *parent = nullptr, qint16 port = 8111);
@@ -32,17 +27,16 @@ public:
 
 public slots:
     //注册结果槽函数
-    void sendResponse(int id, QJsonObject result);
+    void sendResponse(const int id, QJsonObject result);
 
 private:
-    QTcpSocket *tcpSocket{};
+    QTcpSocket *tcpSocket;
     //注册数据
     int tcpId = 0;
     QMutex sendMutex;
-    QHash<int, TcpInfo> regHash;
+    QHash<const int, QTcpSocket*> regHash;
 
     QThread *thread;
-
 
 protected:
     void incomingConnection(qintptr descriptor) override;
@@ -50,6 +44,7 @@ protected:
 signals:
     void startWorker();
     void sendLoginData(qintptr, const QJsonObject&);
+
 };
 
 

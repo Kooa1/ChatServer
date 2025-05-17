@@ -2,10 +2,10 @@
 <project version="4">
   <component name="PublishConfigData" autoUpload="Always" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
-      <paths name="QtServer (964863e9-ea7d-455b-8846-b12fecc6941a)">
+      <paths name="远程主机 (468a94ed-c249-47ff-9b29-164020c022e7)">
         <serverdata>
           <mappings>
-            <mapping deploy="/tmp/tmp.k2koh9VVPm/ChatServer" local="$PROJECT_DIR$" />
+            <mapping deploy="/tmp/tmp.bSDi1OPBio/ChatServer" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />

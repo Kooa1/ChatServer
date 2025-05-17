@@ -8,22 +8,22 @@
 #include <QDebug>
 #include <QObject>
 #include <QRunnable>
-#include <QRandomGenerator>
-#include <QJsonObject>
-#include <QJsonDocument>
-#include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTcpSocket>
 #include <QEventLoop>
+#include <QJsonObject>
+#include <QSqlDatabase>
+#include <QJsonDocument>
+#include <QRandomGenerator>
 
 
 class Register : public QRunnable{
 
 public:
     //回调函数声明
-    using ResultCallback = std::function<void(int tcpId, const QJsonObject&)>;
+    using ResultCallback = std::function<void(const int tcpId, const QJsonObject&)>;
 
-    explicit Register(int, QJsonObject, ResultCallback callback);
+    explicit Register(const int, QJsonObject, ResultCallback callback);
 
     //重载
     void run() override;
@@ -50,7 +50,7 @@ private:
 
     bool insertInfoDB();
 
-    static QJsonObject buildJsonMsg(int tcpId, int, const QString &);
+    static QJsonObject buildJsonMsg(const int tcpId, int, const QString &);
 
 };
 

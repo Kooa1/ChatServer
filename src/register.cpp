@@ -5,7 +5,7 @@
 #include "../include/register.h"
 #include "../include/connectionpool.h"
 
-Register::Register(int tcpId, QJsonObject json, ResultCallback callback) : QRunnable(), m_callback(std::move(callback)) {
+Register::Register(const int tcpId, QJsonObject json, ResultCallback callback) : QRunnable(), m_callback(std::move(callback)) {
     setAutoDelete(true);
     this->account = json["account"].toString();
     this->password = json["password"].toString();
@@ -25,6 +25,7 @@ void Register::run() {
         if (!insertInfoDB()){
             result = buildJsonMsg(tcpId, 0x002, errorMsg);
             m_callback(tcpId, result);
+            return;
         }
 
         result = buildJsonMsg(tcpId, 0x001, errorMsg);
@@ -133,7 +134,7 @@ bool Register::insertInfoDB() {
 }
 
 //构造注册返回信息
-QJsonObject Register::buildJsonMsg(int tcpId, int code, const QString &msg) {
+QJsonObject Register::buildJsonMsg(const int tcpId, int code, const QString &msg) {
     QJsonObject errorInfo{
             {"id", tcpId},
             {"code", code},
