@@ -20,7 +20,7 @@ void Login::worker() {
     QTcpSocket *tcpSocket = new QTcpSocket();
     QPair<qintptr, QJsonObject> taskInfo;
 
-//    QEventLoop loop;
+    QEventLoop loop;
     {
         QMutexLocker locker(&queueMutex);
         if (!taskQueue.isEmpty()) {
@@ -36,20 +36,19 @@ void Login::worker() {
             };
 
             tcpSocket->write(QJsonDocument(jsonObject).toJson());
+            qDebug() << "send success";
 
             connect(tcpSocket, &QTcpSocket::readyRead, this, [=](){
-                QString str = tcpSocket->readAll();
-                qDebug() << "client : " << str;
-                qDebug() << "server : 1";
-
+                QJsonObject text = QJsonDocument::fromJson(tcpSocket->readAll()).object();
+                qDebug() << text;
             });
         }
+        qDebug() << "success";
     }
-
     if(loginResult(taskInfo.second)){
         qDebug() << "access";
     }
-//    loop.exec();
+    loop.exec();
 }
 
 //slots

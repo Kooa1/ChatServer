@@ -55,11 +55,11 @@ void CheckAction::incomingConnection(qintptr descriptor) {
         if (json["action"] == "login"){
 //            qDebug() << json["account"].toString();
 //            qDebug() << tcpSocket->socketDescriptor();
-
             emit sendLoginData(tcpSocket->socketDescriptor(), json);
             emit startWorker();
             return;
         }
+        qDebug() << "?";
     });
 }
 
