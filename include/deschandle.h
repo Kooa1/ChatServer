@@ -18,7 +18,7 @@
 class DescHandle : public QObject {
 Q_OBJECT
 
-struct usrInfo {
+struct tempInfo {
     QTcpSocket* tcp;
 };
 
@@ -32,20 +32,25 @@ public slots:
     //工作函数
     void working();
 
-    void recvUserData();
+    void recvLoginData();
 
 private:
     //常驻登陆线程
     QThread *loginThread;
-    Login *guradLogin;
+    Login *guardLogin;
 
     //队列锁
     QMutex queLock;
     //套接字描述服队列
     QQueue<qintptr> descQue;
 
-    //
-    QHash<qint32, usrInfo> userPool;
+    //临时id
+    qint32 tempId = 100000;
+    //tcpsocket临时池
+    QHash<qint32, QTcpSocket*> tempPool;
+
+    //认证后的用户池
+    QHash<qint32, tempInfo> userPool;
 
 private:
     //行为检测
@@ -57,7 +62,7 @@ signals:
     //login工作函数开始工作信号
     void loginStart();
     //数据发送
-    void loginRecvData(const QJsonObject&);
+    void loginRecvData(qint32, const QJsonObject&);
 
 };
 

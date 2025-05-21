@@ -27,15 +27,14 @@ void DescHandle::actionCheck() {
 
     connect(tcpSocket, &QTcpSocket::readyRead, [this, tcpSocket](){
         QJsonObject json = QJsonDocument::fromJson(tcpSocket->readAll()).object();
-        qDebug() << json;
         if (json["action"] == "register") {
             qDebug() << "register";
         } else if (json["action"] == "login") {
             qDebug() << "login";
-            emit loginRecvData(json);
+            tempPool.insert(++tempId, tcpSocket);
+            emit loginRecvData(tempId, json);
         }
     });
-
 
 }
 
@@ -48,16 +47,18 @@ void DescHandle::recvDescriptor(qintptr desc) {
     QMetaObject::invokeMethod(this->parent(), "startWorker", Qt::QueuedConnection);
 }
 
-void DescHandle::recvUserData() {
-
-}
-
 void DescHandle::initLogin() {
     loginThread = new QThread(this);
-    guradLogin = new Login(this);
-    guradLogin->moveToThread(loginThread);
-    connect(this, &DescHandle::loginRecvData, guradLogin, &Login::recvData);
-    connect(this, &DescHandle::loginStart, guradLogin, &Login::worker);
+    guardLogin = new Login(this);
+    guardLogin->moveToThread(loginThread);
+
+    connect(this, &DescHandle::loginRecvData, guardLogin, &Login::recvData);
+    connect(this, &DescHandle::loginStart, guardLogin, &Login::worker);
+    connect(guardLogin, &Login::sendLoginResult, this, &DescHandle::recvLoginData);
 
     loginThread->start();
+}
+
+void DescHandle::recvLoginData() {
+
 }

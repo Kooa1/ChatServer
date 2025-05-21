@@ -19,19 +19,28 @@
 #include <QSqlDatabase>
 #include <QMutexLocker>
 #include <QJsonDocument>
+#include <QMetaType>
 
-class Login : public QObject{
+class Login : public QObject {
 Q_OBJECT
 
+struct tempInfo{
+    qint32 tempId;
+    QJsonObject json;
+};
+
 public:
-    explicit Login(QObject*);
+    explicit Login(QObject *);
+
     ~Login() override;
 
 public slots:
+
     //工作函数
     void worker();
+
     //数据接收函数
-    void recvData(const QJsonObject &);
+    void recvData(qint32, const QJsonObject &);
 
 private:
     //错误信息
@@ -43,14 +52,17 @@ private:
     //json队列锁
     QMutex qLock;
     //json数据队列
-    QQueue<QJsonObject> jsonQueue;
+    QQueue<tempInfo> jsonQueue;
+
 
 private:
+    //数据库验证账号
     bool loginResult(const QJsonObject &);
-
+    //构造json
     QJsonObject buildJsonMsg(int, const QString &);
 
 signals:
+    void sendLoginResult();
 
 };
 
