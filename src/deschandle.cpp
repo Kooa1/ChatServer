@@ -28,12 +28,6 @@ void DescHandle::connSort() {
             return;
         } else if (json["action"] == "login") {
             qDebug() << "login";
-
-            emit loginRecvData(tcpSocket->socketDescriptor(), json);
-            connect(this, &DescHandle::initComplete, this, [=](){
-                cleanDesc(tcpSocket);
-            });
-
             return;
         }
     });

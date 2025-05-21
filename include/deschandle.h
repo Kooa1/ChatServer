@@ -26,8 +26,6 @@ public slots:
 
     void working();
 
-    void cleanDesc(QTcpSocket*);
-
 private:
     qintptr descriptor;
 
@@ -43,8 +41,7 @@ signals:
     void start();
 
     void loginStart();
-    void loginRecvData(qintptr, const QJsonObject&);
-    void initComplete();
+    void loginRecvData(const QJsonObject&);
 
 };
 

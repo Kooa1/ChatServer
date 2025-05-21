@@ -37,11 +37,7 @@ public slots:
     //工作函数
     void worker();
     //数据接收函数
-    void recvData(qintptr, const QJsonObject &);
-
-    void onReadyRead();
-
-    void onDisconnect();
+    void recvData(const QJsonObject &);
 
 private:
     //数据接收
@@ -51,22 +47,12 @@ private:
     //错误信息
     QString errorMsg;
 
-    //活跃用户哈希表
-    QHash<qintptr, QTcpSocket*> userPool;
-
-    //线程哈希表
-    QHash<int, ThreadInfo> threadPool;
     //分配锁
     QMutex assignMutex;
 
     QObject *object;
 
 private:
-    //关闭线程
-    void destroy();
-    //工作分配
-//    void assignTask(qintptr);
-
     bool loginResult(const QJsonObject &);
 
     static QJsonObject buildJsonMsg(int, const QString &);

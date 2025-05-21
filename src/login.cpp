@@ -10,38 +10,11 @@ Login::Login(QObject *object) {
 }
 
 void Login::worker() {
-    qDebug() << "worker";
 
-    QPair<QTcpSocket *, QJsonObject> taskInfo;
-    QMutexLocker locker(&queueMutex);
-    {
-        taskInfo = taskQueue.dequeue();
-    }
-
-    if(loginResult(taskInfo.second)){
-        qDebug() << "access";
-        userPool.insert(taskInfo.first->socketDescriptor(), taskInfo.first);
-        QByteArray data = QJsonDocument(buildJsonMsg(0x001,"ok")).toJson();
-        taskInfo.first->write(data);
-
-        connect(taskInfo.first, &QTcpSocket::readyRead, this, [=](){
-            qDebug() << "ok";
-        });
-    }
 }
 
-//slots
-void Login::recvData(qintptr descriptor, const QJsonObject &json) {
-    //数据缓冲队列
-    QMutexLocker locker(&queueMutex);
-    QTcpSocket *tcpSocket = new QTcpSocket(this);
-    if(tcpSocket->setSocketDescriptor(descriptor)){
-        qDebug() << "bind ok";
-        tcpSocket->state();
-    }
-    taskQueue.enqueue(QPair(tcpSocket, json));
-    qDebug() << "recvOK";
-    QMetaObject::invokeMethod(object, "initComplete", Qt::QueuedConnection);
+void Login::recvData(const QJsonObject &json) {
+
 }
 
 bool Login::loginResult(const QJsonObject &json) {
@@ -85,13 +58,6 @@ bool Login::loginResult(const QJsonObject &json) {
     return false;
 }
 
-void Login::destroy() {
-    for (QHash<int, ThreadInfo>::iterator it = threadPool.begin(); it != threadPool.end(); ++it) {
-        it.value().thread->quit();
-        it.value().thread->wait();
-    }
-}
-
 QJsonObject Login::buildJsonMsg(int code, const QString &msg) {
     QJsonObject Info{
             {"code",      code},
@@ -112,8 +78,4 @@ QJsonObject Login::buildJsonMsg(int code, const QString &msg) {
     return Info;
 }
 
-
-Login::~Login() {
-    destroy();
-}
-
+Login::~Login() = default;
