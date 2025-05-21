@@ -25,12 +25,12 @@ Q_OBJECT
 
 //结构体保存线程参数
 struct ThreadInfo{
-    int taskNum;
+    QTcpSocket *tcpSocket;
     QThread *thread;
 };
 
 public:
-    explicit Login();
+    explicit Login(QObject*);
     ~Login() override;
 
 public slots:
@@ -46,7 +46,7 @@ public slots:
 private:
     //数据接收
     QMutex queueMutex;//队列锁
-    QQueue<QPair<qintptr, QJsonObject>> taskQueue;
+    QQueue<QPair<QTcpSocket*, QJsonObject>> taskQueue;
 
     //错误信息
     QString errorMsg;
@@ -59,6 +59,8 @@ private:
     //分配锁
     QMutex assignMutex;
 
+    QObject *object;
+
 private:
     //关闭线程
     void destroy();
@@ -70,7 +72,7 @@ private:
     static QJsonObject buildJsonMsg(int, const QString &);
 
 signals:
-    void initSocketComplete();
+    void initTcpComplete();
 };
 
 #endif //CHATSERVER_LOGIN_H

@@ -16,8 +16,8 @@ add_executable(ChatServer
         src/main.cpp
         src/connectsql.cpp
         include/connectsql.h
-        src/checkaction.cpp
-        include/checkaction.h
+        src/tcpserver.cpp
+        include/tcpserver.h
         src/connectionpool.cpp
         include/connectionpool.h
         include/register.h
@@ -25,8 +25,8 @@ add_executable(ChatServer
         src/login.cpp
         include/login.h
         include/login.h
-        src/tools.cpp
-        include/tools.h
+        src/deschandle.cpp
+        include/deschandle.h
 )
 target_link_libraries(ChatServer
         Qt5::Core
