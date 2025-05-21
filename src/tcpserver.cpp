@@ -17,6 +17,7 @@ TcpServer::TcpServer(QObject *parent, qint16 port) : QTcpServer(parent) {
 }
 
 void TcpServer::incomingConnection(qintptr descriptor) {
+    qDebug() << "new conn";
     emit newDescriptor(descriptor);
 }
 

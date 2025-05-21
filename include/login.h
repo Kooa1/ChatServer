@@ -23,12 +23,6 @@
 class Login : public QObject{
 Q_OBJECT
 
-//结构体保存线程参数
-struct ThreadInfo{
-    QTcpSocket *tcpSocket;
-    QThread *thread;
-};
-
 public:
     explicit Login(QObject*);
     ~Login() override;
@@ -40,25 +34,24 @@ public slots:
     void recvData(const QJsonObject &);
 
 private:
-    //数据接收
-    QMutex queueMutex;//队列锁
-    QQueue<QPair<QTcpSocket*, QJsonObject>> taskQueue;
-
     //错误信息
     QString errorMsg;
 
-    //分配锁
-    QMutex assignMutex;
-
+    //上级对象指针
     QObject *object;
+
+    //json队列锁
+    QMutex qLock;
+    //json数据队列
+    QQueue<QJsonObject> jsonQueue;
 
 private:
     bool loginResult(const QJsonObject &);
 
-    static QJsonObject buildJsonMsg(int, const QString &);
+    QJsonObject buildJsonMsg(int, const QString &);
 
 signals:
-    void initTcpComplete();
+
 };
 
 #endif //CHATSERVER_LOGIN_H

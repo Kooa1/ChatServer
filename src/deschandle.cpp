@@ -9,34 +9,47 @@ DescHandle::DescHandle(QObject *parent) : QObject(parent) {
 }
 
 void DescHandle::working() {
-    qDebug() << "1";
-    connSort();
-
+    actionCheck();
 }
 
-void DescHandle::connSort() {
-    qDebug() << "1";
-    QTcpSocket *tcpSocket = new QTcpSocket(this);
-    if (!tcpSocket->setSocketDescriptor(descriptor)) {
-        qWarning() << "bind descriptor failed : " << tcpSocket->errorString();
-    }
+void DescHandle::actionCheck() {
+    qDebug() << "connSort";
+    QTcpSocket *tcpSocket = new QTcpSocket();
 
-    connect(tcpSocket, &QTcpSocket::readyRead, this, [=]() {
-        QJsonObject json = QJsonDocument::fromJson(tcpSocket->readAll()).object();
-        if (json["action"] == "register") {
-            qDebug() << "regi";
-            return;
-        } else if (json["action"] == "login") {
-            qDebug() << "login";
+    QMutexLocker locker(&queLock);{
+        if (!tcpSocket->setSocketDescriptor(descQue.dequeue())) {
+            qWarning() << "desc bind failed : " << tcpSocket->errorString();
+            tcpSocket->disconnectFromHost();
+            tcpSocket->deleteLater();
             return;
         }
+    }
+
+    connect(tcpSocket, &QTcpSocket::readyRead, [this, tcpSocket](){
+        QJsonObject json = QJsonDocument::fromJson(tcpSocket->readAll()).object();
+        qDebug() << json;
+        if (json["action"] == "register") {
+            qDebug() << "register";
+        } else if (json["action"] == "login") {
+            qDebug() << "login";
+            emit loginRecvData(json);
+        }
     });
+
+
 }
 
 void DescHandle::recvDescriptor(qintptr desc) {
-    this->descriptor = desc;
-    qDebug() << descriptor;
+
+    QMutexLocker locker(&queLock);{
+        descQue.enqueue(desc);
+    }
+
     QMetaObject::invokeMethod(this->parent(), "startWorker", Qt::QueuedConnection);
+}
+
+void DescHandle::recvUserData() {
+
 }
 
 void DescHandle::initLogin() {

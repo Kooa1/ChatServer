@@ -10,11 +10,28 @@ Login::Login(QObject *object) {
 }
 
 void Login::worker() {
+    // qDebug() << "start";
+    QJsonObject json;
+    QMutexLocker locker(&qLock);
+    {
+        if (!jsonQueue.isEmpty()) {
+            json = jsonQueue.dequeue();
+            qDebug() << json;
+        }
+    }
+
+    if (loginResult(json)) {
+        qDebug() << "success";
+    }
+
 
 }
 
 void Login::recvData(const QJsonObject &json) {
-
+    QMutexLocker locker(&qLock);{
+        jsonQueue.enqueue(json);
+    }
+    QMetaObject::invokeMethod(object, "loginStart", Qt::QueuedConnection);
 }
 
 bool Login::loginResult(const QJsonObject &json) {
@@ -36,7 +53,8 @@ bool Login::loginResult(const QJsonObject &json) {
     }
 
     QSqlQuery query(db);
-    QString sql = "SELECT phone,password_hash,salt FROM users";
+    QString sql = "SELECT uid, phone, password_hash, salt, account_status FROM users";
+
     if (!query.exec(sql)) {
         errorMsg = db.lastError().text();
         qDebug() << "sql exec error";
@@ -47,9 +65,14 @@ bool Login::loginResult(const QJsonObject &json) {
     while (query.next()) {
         if (query.value(0).toString() == json["account"].toString() &&
             query.value(1).toString() == json["password"].toString() + query.value(2).toString()) {
+            // QMetaObject::invokeMethod(
+            //                 object,
+            //                 "recvUserData",
+            //                 });
             ConnectionPool::instance().releaseConnection(db);
             return true;
         } else {
+            ConnectionPool::instance().releaseConnection(db);
             errorMsg = query.lastError().text();
             return false;
         }

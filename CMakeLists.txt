@@ -14,17 +14,14 @@ find_package(Qt5 COMPONENTS
 
 add_executable(ChatServer
         src/main.cpp
-        src/connectsql.cpp
-        include/connectsql.h
         src/tcpserver.cpp
         include/tcpserver.h
         src/connectionpool.cpp
         include/connectionpool.h
         include/register.h
         src/register.cpp
+        include/login.h
         src/login.cpp
-        include/login.h
-        include/login.h
         src/deschandle.cpp
         include/deschandle.h
 )

@@ -18,29 +18,45 @@
 class DescHandle : public QObject {
 Q_OBJECT
 
+struct usrInfo {
+    QTcpSocket* tcp;
+};
+
 public:
+    //构造函数
     explicit DescHandle(QObject *parent = nullptr);
 
 public slots:
+    //套接字描述符接收
     void recvDescriptor(qintptr);
-
+    //工作函数
     void working();
 
-private:
-    qintptr descriptor;
+    void recvUserData();
 
+private:
+    //常驻登陆线程
     QThread *loginThread;
     Login *guradLogin;
 
-private:
-    void connSort();
+    //队列锁
+    QMutex queLock;
+    //套接字描述服队列
+    QQueue<qintptr> descQue;
 
+    //
+    QHash<qint32, usrInfo> userPool;
+
+private:
+    //行为检测
+    void actionCheck();
+    //初始化常驻登陆线程
     void initLogin();
 
 signals:
-    void start();
-
+    //login工作函数开始工作信号
     void loginStart();
+    //数据发送
     void loginRecvData(const QJsonObject&);
 
 };
