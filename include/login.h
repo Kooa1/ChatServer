@@ -49,9 +49,6 @@ public slots:
     void recvData(qint32, const QJsonObject &);
 
 private:
-    //错误信息
-    QString errorMsg;
-
     //上级对象指针
     QObject *object;
 
@@ -75,6 +72,7 @@ private:
     User buildInfo();
 
 signals:
+    void sendResult(const QJsonObject&,const QJsonObject&);
 
 };
 

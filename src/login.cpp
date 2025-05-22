@@ -38,16 +38,16 @@ bool Login::loginResult(qint32 tempId, const QJsonObject &json) {
     QSqlDatabase db = ConnectionPool::instance().getConnection();
     //检测有效性
     if (!db.isValid()) {
-        errorMsg = db.lastError().text();
         qDebug() << "get db error";
         ConnectionPool::instance().releaseConnection(db);
+        buildJsonMsg(-1, QString(db.lastError().text()));
         return false;
     }
     //检测是否开启
     if (!db.open()) {
-        errorMsg = db.lastError().text();
         qDebug() << "open db error";
         ConnectionPool::instance().releaseConnection(db);
+        buildJsonMsg(-1, QString(db.lastError().text()));
         return false;
     }
 
@@ -55,9 +55,9 @@ bool Login::loginResult(qint32 tempId, const QJsonObject &json) {
     QString sql = "SELECT uid, phone, password_hash, salt, account_status FROM users";
 
     if (!query.exec(sql)) {
-        errorMsg = db.lastError().text();
         qDebug() << "sql exec error";
         ConnectionPool::instance().releaseConnection(db);
+        buildJsonMsg(-1, QString(db.lastError().text()));
         return false;
     }
 
@@ -68,18 +68,27 @@ bool Login::loginResult(qint32 tempId, const QJsonObject &json) {
     root["uid"];
     root["friendships"];
 
+    bool userFound = false;
     while (query.next()) {
         if (query.value(1).toString() == json["account"].toString() &&
             query.value(2).toString() == json["password"].toString() + query.value(3).toString()) {
             root["uid"] = query.value(0).toInt();
+            userFound = true;
+            break;
         }
+    }
+
+    if (!userFound){
+        buildJsonMsg(0x000, "account doesn't exist");
+        return false;
     }
 
     query.prepare("SELECT * FROM friendships WHERE user1_id = ?");
     query.addBindValue(root["uid"].toInt());
     if (!query.exec()) {
-        errorMsg = query.lastError().text();
         ConnectionPool::instance().releaseConnection(db);
+        buildJsonMsg(-1, QString(db.lastError().text()));
+        return false;
     }
 
     while (query.next()) {
@@ -88,12 +97,11 @@ bool Login::loginResult(qint32 tempId, const QJsonObject &json) {
             data.append(query.value(i).toString());
         }
         friendships.append(data);
-        qDebug() << data;
     }
-
     root.insert("friendships", friendships);
+    qDebug() << buildJsonMsg(0x001, "loginSuccess");
 
-    return false;
+    return true;
 }
 
 QJsonObject Login::buildJsonMsg(int code, const QString &msg) {
