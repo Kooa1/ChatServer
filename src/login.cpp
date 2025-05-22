@@ -7,33 +7,33 @@
 
 Login::Login(QObject *object) {
     this->object = object;
+
 }
 
 void Login::worker() {
-    QJsonObject json;
+    QPair<qint32, QJsonObject> tempInfo;
+
     QMutexLocker locker(&qLock);
     {
         if (!jsonQueue.isEmpty()) {
-            json = jsonQueue.dequeue().json;
-            qDebug() << json;
+            tempInfo = jsonQueue.dequeue();
         }
     }
 
-    if (loginResult(json)) {
+    if (loginResult(tempInfo.first, tempInfo.second)) {
         qDebug() << "success";
-
     }
 }
 
 void Login::recvData(qint32 tempId, const QJsonObject &json) {
     QMutexLocker locker(&qLock);
     {
-        jsonQueue.enqueue(tempInfo{tempId, json});
+        jsonQueue.enqueue(QPair(tempId, json));
     }
     QMetaObject::invokeMethod(object, "loginStart", Qt::QueuedConnection);
 }
 
-bool Login::loginResult(const QJsonObject &json) {
+bool Login::loginResult(qint32 tempId, const QJsonObject &json) {
     //获取数据库连接
     QSqlDatabase db = ConnectionPool::instance().getConnection();
     //检测有效性
@@ -61,18 +61,37 @@ bool Login::loginResult(const QJsonObject &json) {
         return false;
     }
 
+    //用户数据
+    QJsonObject root;
+    QJsonArray friendships;
+    root["tempId"] = tempId;
+    root["uid"];
+    root["friendships"];
+
     while (query.next()) {
         if (query.value(1).toString() == json["account"].toString() &&
             query.value(2).toString() == json["password"].toString() + query.value(3).toString()) {
-
-            ConnectionPool::instance().releaseConnection(db);
-            return true;
-        } else {
-            ConnectionPool::instance().releaseConnection(db);
-            errorMsg = query.lastError().text();
-            return false;
+            root["uid"] = query.value(0).toInt();
         }
     }
+
+    query.prepare("SELECT * FROM friendships WHERE user1_id = ?");
+    query.addBindValue(root["uid"].toInt());
+    if (!query.exec()) {
+        errorMsg = query.lastError().text();
+        ConnectionPool::instance().releaseConnection(db);
+    }
+
+    while (query.next()) {
+        QJsonArray data;
+        for (int i = 0; i < 4; ++i) {
+            data.append(query.value(i).toString());
+        }
+        friendships.append(data);
+        qDebug() << data;
+    }
+
+    root.insert("friendships", friendships);
 
     return false;
 }
@@ -95,6 +114,11 @@ QJsonObject Login::buildJsonMsg(int code, const QString &msg) {
     };
 
     return Info;
+}
+
+User Login::buildInfo() {
+
+    return User();
 }
 
 Login::~Login() = default;

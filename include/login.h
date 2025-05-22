@@ -20,14 +20,20 @@
 #include <QMutexLocker>
 #include <QJsonDocument>
 #include <QMetaType>
+#include <QJsonArray>
+
+struct User {
+    qint32 tempId;
+    QJsonObject resultJson;
+    QJsonObject userData;
+    QTcpSocket *tcpSocket = nullptr;
+};
+
+Q_DECLARE_METATYPE(User);
+
 
 class Login : public QObject {
 Q_OBJECT
-
-struct tempInfo{
-    qint32 tempId;
-    QJsonObject json;
-};
 
 public:
     explicit Login(QObject *);
@@ -52,17 +58,23 @@ private:
     //json队列锁
     QMutex qLock;
     //json数据队列
-    QQueue<tempInfo> jsonQueue;
+    QQueue<QPair<qint32, QJsonObject>> jsonQueue;
 
+    //认证队列锁
+    QMutex reLock;
+    //认证队列
+    QQueue<QJsonObject> resultQueue;
 
 private:
     //数据库验证账号
-    bool loginResult(const QJsonObject &);
+    bool loginResult(qint32, const QJsonObject &);
+
     //构造json
     QJsonObject buildJsonMsg(int, const QString &);
 
+    User buildInfo();
+
 signals:
-    void sendLoginResult();
 
 };
 

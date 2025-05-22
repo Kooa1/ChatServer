@@ -18,10 +18,6 @@
 class DescHandle : public QObject {
 Q_OBJECT
 
-struct tempInfo {
-    QTcpSocket* tcp;
-};
-
 public:
     //构造函数
     explicit DescHandle(QObject *parent = nullptr);
@@ -45,12 +41,12 @@ private:
     QQueue<qintptr> descQue;
 
     //临时id
-    qint32 tempId = 100000;
+    qint32 tempId = 1;
     //tcpsocket临时池
     QHash<qint32, QTcpSocket*> tempPool;
 
     //认证后的用户池
-    QHash<qint32, tempInfo> userPool;
+    QHash<qint32, User> userPool;
 
 private:
     //行为检测
@@ -62,9 +58,8 @@ signals:
     //login工作函数开始工作信号
     void loginStart();
     //数据发送
-    void loginRecvData(qint32, const QJsonObject&);
+    void loginSendData(qint32, const QJsonObject&);
 
 };
-
 
 #endif //CHATSERVER_DESCHANDLE_H

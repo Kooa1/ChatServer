@@ -32,7 +32,7 @@ void DescHandle::actionCheck() {
         } else if (json["action"] == "login") {
             qDebug() << "login";
             tempPool.insert(++tempId, tcpSocket);
-            emit loginRecvData(tempId, json);
+            emit loginSendData(tempId, json);
         }
     });
 
@@ -52,9 +52,8 @@ void DescHandle::initLogin() {
     guardLogin = new Login(this);
     guardLogin->moveToThread(loginThread);
 
-    connect(this, &DescHandle::loginRecvData, guardLogin, &Login::recvData);
+    connect(this, &DescHandle::loginSendData, guardLogin, &Login::recvData);
     connect(this, &DescHandle::loginStart, guardLogin, &Login::worker);
-    connect(guardLogin, &Login::sendLoginResult, this, &DescHandle::recvLoginData);
 
     loginThread->start();
 }
