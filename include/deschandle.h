@@ -28,7 +28,8 @@ public slots:
     //工作函数
     void working();
 
-    void recvLoginData();
+    void recvLoginData(const QJsonObject &);
+    void recvLoginData(const User &, const QJsonObject &);
 
 private:
     //常驻登陆线程
@@ -44,7 +45,11 @@ private:
     qint32 tempId = 1;
     //tcpsocket临时池
     QHash<qint32, QTcpSocket*> tempPool;
+    //临时哈希表锁
+    QMutex hashLock;
 
+    //用户池锁
+    QMutex userLock;
     //认证后的用户池
     QHash<qint32, User> userPool;
 
@@ -58,7 +63,7 @@ signals:
     //login工作函数开始工作信号
     void loginStart();
     //数据发送
-    void loginSendData(qint32, const QJsonObject&);
+    void sendLoginData(qint32, const QJsonObject &);
 
 };
 

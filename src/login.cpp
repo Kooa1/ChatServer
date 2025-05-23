@@ -8,13 +8,13 @@
 Login::Login(QObject *object) {
     this->object = object;
 
+    connect(this, &Login::buildStart, this, &Login::buildUser);
 }
 
 void Login::worker() {
     QPair<qint32, QJsonObject> tempInfo;
 
-    QMutexLocker locker(&qLock);
-    {
+    QMutexLocker locker(&qLock); {
         if (!jsonQueue.isEmpty()) {
             tempInfo = jsonQueue.dequeue();
         }
@@ -26,8 +26,7 @@ void Login::worker() {
 }
 
 void Login::recvData(qint32 tempId, const QJsonObject &json) {
-    QMutexLocker locker(&qLock);
-    {
+    QMutexLocker locker(&qLock); {
         jsonQueue.enqueue(QPair(tempId, json));
     }
     QMetaObject::invokeMethod(object, "loginStart", Qt::QueuedConnection);
@@ -40,14 +39,24 @@ bool Login::loginResult(qint32 tempId, const QJsonObject &json) {
     if (!db.isValid()) {
         qDebug() << "get db error";
         ConnectionPool::instance().releaseConnection(db);
-        buildJsonMsg(-1, QString(db.lastError().text()));
+        QMetaObject::invokeMethod(
+        this,
+        "sendResult",
+        Qt::QueuedConnection,
+        Q_ARG(const QJsonObject&,buildJsonMsg(tempId, -1, QString(db.lastError().text())))
+        );
         return false;
     }
     //检测是否开启
     if (!db.open()) {
         qDebug() << "open db error";
         ConnectionPool::instance().releaseConnection(db);
-        buildJsonMsg(-1, QString(db.lastError().text()));
+        QMetaObject::invokeMethod(
+        this,
+        "sendResult",
+        Qt::QueuedConnection,
+        Q_ARG(const QJsonObject&,buildJsonMsg(tempId, -1, QString(db.lastError().text())))
+        );
         return false;
     }
 
@@ -57,18 +66,24 @@ bool Login::loginResult(qint32 tempId, const QJsonObject &json) {
     if (!query.exec(sql)) {
         qDebug() << "sql exec error";
         ConnectionPool::instance().releaseConnection(db);
-        buildJsonMsg(-1, QString(db.lastError().text()));
+        QMetaObject::invokeMethod(
+        this,
+        "sendResult",
+        Qt::QueuedConnection,
+        Q_ARG(const QJsonObject&,buildJsonMsg(tempId, -1, QString(db.lastError().text())))
+        );
         return false;
     }
 
     //用户数据
     QJsonObject root;
     QJsonArray friendships;
-    root["tempId"] = tempId;
     root["uid"];
     root["friendships"];
 
+    //认证flag
     bool userFound = false;
+    //数据库认证
     while (query.next()) {
         if (query.value(1).toString() == json["account"].toString() &&
             query.value(2).toString() == json["password"].toString() + query.value(3).toString()) {
@@ -78,16 +93,27 @@ bool Login::loginResult(qint32 tempId, const QJsonObject &json) {
         }
     }
 
-    if (!userFound){
-        buildJsonMsg(0x000, "account doesn't exist");
+    if (!userFound) {
+        QMetaObject::invokeMethod(
+        this,
+        "sendResult",
+        Qt::QueuedConnection,
+        Q_ARG(const QJsonObject&,buildJsonMsg(tempId, 0x000, QString(db.lastError().text())))
+        );
         return false;
     }
 
+    //好友关系查询
     query.prepare("SELECT * FROM friendships WHERE user1_id = ?");
     query.addBindValue(root["uid"].toInt());
     if (!query.exec()) {
         ConnectionPool::instance().releaseConnection(db);
-        buildJsonMsg(-1, QString(db.lastError().text()));
+        QMetaObject::invokeMethod(
+        this,
+        "sendResult",
+        Qt::QueuedConnection,
+        Q_ARG(const QJsonObject&,buildJsonMsg(tempId, -1, QString(db.lastError().text())))
+        );
         return false;
     }
 
@@ -99,15 +125,23 @@ bool Login::loginResult(qint32 tempId, const QJsonObject &json) {
         friendships.append(data);
     }
     root.insert("friendships", friendships);
-    qDebug() << buildJsonMsg(0x001, "loginSuccess");
+
+    QMutexLocker locker(&reLock); {
+        resultQueue.enqueue(QPair(root, buildJsonMsg(tempId, 0x001, "Success")));
+    }
+    ConnectionPool::instance().releaseConnection(db);
+
+    emit buildStart();
 
     return true;
 }
 
-QJsonObject Login::buildJsonMsg(int code, const QString &msg) {
+QJsonObject Login::buildJsonMsg(qint32 tempId, qint32 code, const QString &msg) {
     QJsonObject Info{
-            {"code",      code},
-            {"status",    [](int select) {
+        {"tempId", tempId},
+        {"code", code},
+        {
+            "status", [](int select) {
                 switch (select) {
                     case 0x000:
                         return "Error : login failed";
@@ -116,17 +150,32 @@ QJsonObject Login::buildJsonMsg(int code, const QString &msg) {
                     default:
                         return "internal error";
                 }
-            }(code)},
-            {"message",   msg},
-            {"timestamp", QDateTime::currentDateTime().toString(Qt::ISODate)}
+            }(code)
+        },
+        {"message", msg},
+        {"timestamp", QDateTime::currentDateTime().toString(Qt::ISODate)}
     };
 
     return Info;
 }
 
-User Login::buildInfo() {
+void Login::buildUser() {
+    //临时键值对
+    QPair<QJsonObject, QJsonObject> tempPair;
+    QMutexLocker locker(&reLock); {
+        tempPair = resultQueue.dequeue();
+    }
+    //默认构造使用用户唯一id,用户好友列表初始化结构体内uid和好友列表
+    User user(tempPair.first["uid"].toInt(), user.userInfo = tempPair.first);
 
-    return User();
+    // emit sendResult(user, tempPair.second);
+    QMetaObject::invokeMethod(
+        this,
+        "sendResult",
+        Qt::QueuedConnection,
+        Q_ARG(const User &, user),
+        Q_ARG(const QJsonObject, tempPair.second)
+        );
 }
 
 Login::~Login() = default;
