@@ -35,7 +35,9 @@ private:
     void initHandle();
 
 signals:
+
     void newDescriptor(qintptr);
+
     void startWorker();
 
 };

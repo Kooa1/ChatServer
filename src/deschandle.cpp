@@ -14,29 +14,34 @@ void DescHandle::working() {
 
 void DescHandle::actionCheck() {
     qDebug() << "connSort";
-    QTcpSocket *tcpSocket = new QTcpSocket();
+    //智能指针
+    User user{QSharedPointer<QTcpSocket>(new QTcpSocket)};
 
-    QMutexLocker locker(&queLock); {
-        if (!tcpSocket->setSocketDescriptor(descQue.dequeue())) {
-            qWarning() << "desc bind failed : " << tcpSocket->errorString();
-            tcpSocket->disconnectFromHost();
-            tcpSocket->deleteLater();
+    QMutexLocker locker(&queLock);
+    {
+        if (!user.tcpSocket.data()->setSocketDescriptor(descQue.dequeue())) {
+            qWarning() << "desc bind failed : " << user.tcpSocket.data()->errorString();
+            user.tcpSocket.data()->disconnectFromHost();
+            user.tcpSocket.data()->deleteLater();
             return;
         }
     }
 
-    connect(tcpSocket, &QTcpSocket::readyRead, [this, tcpSocket]() {
-        QJsonObject json = QJsonDocument::fromJson(tcpSocket->readAll()).object();
+
+    connect(user.tcpSocket.data(), &QTcpSocket::readyRead, [this, user]() {
+        QJsonObject json = QJsonDocument::fromJson(user.tcpSocket.data()->readAll()).object();
         if (json["action"] == "register") {
             qDebug() << "register";
         } else if (json["action"] == "login") {
             qDebug() << "login";
-            tempPool.insert(++tempId, tcpSocket);
+            QMutexLocker UPL(&userLock);
+            userPool.insert(++tempId, user);
             emit sendLoginData(tempId, json);
         } else {
             qDebug() << "other";
         }
     });
+//    connect(tcpSocket.data(), &QTcpSocket::disconnected, this, &DescHandle::onDisconnect);
 }
 
 void DescHandle::recvDescriptor(qintptr desc) {
@@ -55,22 +60,16 @@ void DescHandle::initLogin() {
 
     connect(this, &DescHandle::sendLoginData, guardLogin, &Login::recvData);
     connect(this, &DescHandle::loginStart, guardLogin, &Login::worker);
-    //连接重载信号槽<失败>
-    connect(guardLogin, QOverload<const QJsonObject &>::of(&Login::sendResult),
-            this, QOverload<const QJsonObject &>::of(&DescHandle::recvLoginData));
-    //连接重载信号槽<成功>
-    connect(guardLogin, QOverload<const User &, const QJsonObject &>::of(&Login::sendResult),
-            this, QOverload<const User &, const QJsonObject &>::of(&DescHandle::recvLoginData));
 
     loginThread->start();
 }
 
-void DescHandle::recvLoginData(const QJsonObject &json) {
-    QByteArray data = QJsonDocument(json).toJson();
-    qDebug() << json;
-    tempPool.value(json["tempId"].toInt())->write(data);
+void DescHandle::loginFailed(const QJsonObject &resultJson) {
+    QByteArray data = QJsonDocument(resultJson).toJson();
+    userPool.value(resultJson["tempId"].toInt()).tcpSocket.data()->write(data);
 }
 
-void DescHandle::recvLoginData(const User &info, const QJsonObject &json) {
+void DescHandle::loginSuccess(const QJsonObject &rootJson, const QJsonObject &resultJson) {
+    QByteArray data = QJsonDocument(resultJson).toJson();
 
 }

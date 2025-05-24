@@ -1,7 +1,5 @@
 #include <QCoreApplication>
 
-
-//#include "../include/connectsql.h"
 #include "../include/tcpserver.h"
 #include "../include/connectionpool.h"
 
@@ -12,8 +10,6 @@ int main(int argc, char *argv[]) {
 
     qRegisterMetaType<qintptr>("qintptr");
     qRegisterMetaType<qintptr>("qintptr&");
-
-    qRegisterMetaType<User>("User&");
 
     //数据库连接
     const QString hostName = "8.148.211.115";
