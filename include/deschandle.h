@@ -13,11 +13,12 @@
 #include <QQueue>
 #include <QThread>
 #include <QThreadPool>
+#include <utility>
 
 
 //用户数据
 struct User {
-    qint32 uid{};
+    qint32 uid;
     QJsonObject userInfo;
     QSharedPointer<QTcpSocket> tcpSocket;
 
