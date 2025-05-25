@@ -6,7 +6,7 @@
 int main(int argc, char *argv[]) {
     QCoreApplication a(argc, argv);
 
-    QThreadPool::globalInstance()->setMaxThreadCount(2);
+    QThreadPool::globalInstance()->setMaxThreadCount(4);
 
     qRegisterMetaType<qintptr>("qintptr");
     qRegisterMetaType<qintptr>("qintptr&");

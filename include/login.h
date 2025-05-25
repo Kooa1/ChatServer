@@ -26,7 +26,7 @@
 
 class Login : public QRunnable {
 public:
-    explicit Login(QObject *, qint32, QJsonObject);
+    explicit Login(QObject *,QJsonObject);
 
     ~Login() override;
 
@@ -37,7 +37,7 @@ public slots:
 private:
     //上级对象指针
     QObject *object;
-
+    //临时id
     qint32 tempId;
     QJsonObject tempJson;
 
@@ -46,7 +46,7 @@ private:
     bool loginResult(qint32, const QJsonObject &);
 
     //构造json
-    QJsonObject buildJsonMsg(qint32, qint32, const QString &);
+    QJsonObject buildJsonMsg(qint32, const QString &);
 };
 
 #endif //CHATSERVER_LOGIN_H

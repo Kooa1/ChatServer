@@ -17,31 +17,26 @@
 #include <QRandomGenerator>
 
 
-class Register : public QRunnable{
+class Register : public QRunnable {
 
 public:
-    //回调函数声明
-    using ResultCallback = std::function<void(const int tcpId, const QJsonObject&)>;
-
-    explicit Register(const int, QJsonObject, ResultCallback callback);
+    explicit Register(QObject *, QJsonObject);
 
     //重载
     void run() override;
 
 private:
+    //上级指针
+    QObject *object;
+    //临时id
+    qint32 tempId;
     //有参构造用户信息
-    QJsonObject json;
     QString account;
     QString password;
-    QString Salt;
-    int tcpId;
 
-    //回调函数返回值
-    QJsonObject result;
-    //错误信息
+    QString Salt;
+
     QString errorMsg;
-    //回调函数
-    ResultCallback m_callback;
 
 private:
     bool acIsExists();
@@ -50,10 +45,9 @@ private:
 
     bool insertInfoDB();
 
-    static QJsonObject buildJsonMsg(const int tcpId, int, const QString &);
+    QJsonObject buildJsonMsg(int, const QString &);
 
 };
-
 
 
 #endif //REGISTER_H

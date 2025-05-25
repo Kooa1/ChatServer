@@ -5,36 +5,46 @@
 #include "../include/register.h"
 #include "../include/connectionpool.h"
 
-Register::Register(const int tcpId, QJsonObject json, ResultCallback callback)
-        : QRunnable(), m_callback(std::move(callback)) {
+Register::Register(QObject *object, QJsonObject tempJson) : QRunnable() {
+    this->object = object;
+    this->tempId = tempJson["tempId"].toInt();
+
+    this->account = tempJson["account"].toString();
+    this->password = tempJson["password"].toString();
+
     setAutoDelete(true);
-    this->account = json["account"].toString();
-    this->password = json["password"].toString();
-    this->tcpId = tcpId;
 }
 
 void Register::run() {
     qDebug() << "ready";
     qDebug() << "account : " << account << "password : " << password;
     if (acIsExists()) {
-        result = buildJsonMsg(tcpId, 0x000, errorMsg);
-        m_callback(tcpId, result);
+        QMetaObject::invokeMethod(
+                object,
+                "registerHandle",
+                Qt::QueuedConnection,
+                Q_ARG(const QJsonObject &, buildJsonMsg(0x000, errorMsg))
+        );
         return;
     }
-    if (!acIsExists()) {
-
-        if (!insertInfoDB()) {
-            result = buildJsonMsg(tcpId, 0x002, errorMsg);
-            m_callback(tcpId, result);
-            return;
-        }
-
-        result = buildJsonMsg(tcpId, 0x001, errorMsg);
-        m_callback(tcpId, result);
+    if (!insertInfoDB()) {
+        QMetaObject::invokeMethod(
+                object,
+                "registerHandle",
+                Qt::QueuedConnection,
+                Q_ARG(const QJsonObject &, buildJsonMsg(0x002, errorMsg))
+        );
         return;
     }
+
+    QMetaObject::invokeMethod(
+            object,
+            "registerHandle",
+            Qt::QueuedConnection,
+            Q_ARG(const QJsonObject &, buildJsonMsg(0x001, "Success"))
+    );
+
 }
-
 
 //随机盐值
 QByteArray Register::salt(int len) {
@@ -60,36 +70,33 @@ bool Register::acIsExists() {
 
     //检测有效性
     if (!db.isValid()) {
-        errorMsg = db.lastError().text();
         qDebug() << "get db error";
         ConnectionPool::instance().releaseConnection(db);
+        errorMsg = db.lastError().text();
         return false;
     }
     //检测是否开启
     if (!db.open()) {
-        errorMsg = db.lastError().text();
         qDebug() << "open db error";
         ConnectionPool::instance().releaseConnection(db);
+        errorMsg = db.lastError().text();
         return false;
     }
 
     QSqlQuery query(db);
     QString sql = "SELECT phone FROM users";
     if (!query.exec(sql)) {
-        errorMsg = query.lastError().text();
         qDebug() << "sql exec error";
         ConnectionPool::instance().releaseConnection(db);
+        errorMsg = query.lastError().text();
         return false;
     }
 
     while (query.next()) {
         if (query.value(0).toString() == account) {
-            qDebug() << "account is Exists, is :" << query.value(0).toString();
             ConnectionPool::instance().releaseConnection(db);
+            errorMsg = "account Exists";
             return true;
-        } else {
-            errorMsg = query.lastError().text();
-            return false;
         }
     }
     return false;
@@ -102,16 +109,16 @@ bool Register::insertInfoDB() {
 
     //检测有效性
     if (!db.isValid()) {
-        errorMsg = db.lastError().text();
         qDebug() << "get db error";
         ConnectionPool::instance().releaseConnection(db);
+        errorMsg = db.lastError().text();
         return false;
     }
     //检测是否开启
     if (!db.open()) {
-        errorMsg = db.lastError().text();
         qDebug() << "open db error";
         ConnectionPool::instance().releaseConnection(db);
+        errorMsg = db.lastError().text();
         return false;
     }
 
@@ -126,6 +133,7 @@ bool Register::insertInfoDB() {
 
     if (!query.exec()) {
         qDebug() << "insert error ,account : " << account;
+        errorMsg = query.lastError().text();
         db.rollback();
         ConnectionPool::instance().releaseConnection(db);
         return false;
@@ -136,9 +144,9 @@ bool Register::insertInfoDB() {
 }
 
 //构造注册返回信息
-QJsonObject Register::buildJsonMsg(const int tcpId, int code, const QString &msg) {
+QJsonObject Register::buildJsonMsg(int code, const QString &msg) {
     QJsonObject Info{
-            {"id",        tcpId},
+            {"tempId", tempId},
             {"code",      code},
             {"status",    [](int select) {
                 switch (select) {

@@ -2,6 +2,8 @@
 // Created by 66 on 25-5-20.
 //
 
+#include "../include/login.h"
+#include "../include/register.h"
 #include "../include/deschandle.h"
 
 DescHandle::DescHandle(QObject *parent) : QObject(parent) {
@@ -27,36 +29,51 @@ void DescHandle::actionCheck() {
         }
     }
 
+    connect(user.tcpSocket.data(),
+            &QTcpSocket::readyRead,
+            [this, user, sock = user.tcpSocket]() {
+                onReadyRead(user, sock);
+            });
 
-    connect(user.tcpSocket.data(), &QTcpSocket::readyRead, [this, user]() {
-        QJsonObject json = QJsonDocument::fromJson(user.tcpSocket.data()->readAll()).object();
-        if (json["action"] == "register") {
-            qDebug() << "register";
-        } else if (json["action"] == "login") {
-            qDebug() << "login";
-            QMutexLocker UPL(&userLock);
-            user.tcpSocket.data()->setProperty("tempId", ++tempId);
-            userPool.insert(tempId, user);
+    connect(user.tcpSocket.data(),
+            &QTcpSocket::disconnected,
+            [this, sock = user.tcpSocket]() {
+                onDisconnect(sock.data()->property("tempId").toInt());
+            });
+}
 
-            QThreadPool::globalInstance()->start(new Login(this, tempId, json));
-        } else {
-            qDebug() << "other";
+void DescHandle::onReadyRead(const User &user, QSharedPointer<QTcpSocket> sock) {
+    QJsonObject json = QJsonDocument::fromJson(user.tcpSocket.data()->readAll()).object();
+    json.insert("tempId", ++tempId);
+    if (json["action"] == "register") {
+        QMutexLocker RPL(&tempLock);
+        {
+            sock.data()->setProperty("tempId", tempId);
+            regPool.insert(tempId, sock);
         }
-    });
 
-//    connect(user.tcpSocket.data(),
-//            &QTcpSocket::disconnected,
-//            [this, &sock = user.tcpSocket]() {
-//                onDisconnect(sock);
-//    });
+        QThreadPool::globalInstance()->start(new Register(this, json));
+
+    } else if (json["action"] == "login") {
+        qDebug() << "login";
+        QMutexLocker UPL(&userLock);
+        {
+            user.tcpSocket.data()->setProperty("tempId", tempId);
+            userPool.insert(tempId, user);
+        }
+
+        QThreadPool::globalInstance()->start(new Login(this, json));
+
+    } else {
+        qDebug() << "other";
+    }
 }
 
-void DescHandle::onReadyread(QSharedPointer<QTcpSocket>) {
-
-}
-
-void DescHandle::onDisconnect(QSharedPointer<QTcpSocket> &sock) {
-
+void DescHandle::onDisconnect(qint32 poolId) {
+    QMutexLocker locker(&userLock);
+    {
+        userPool.remove(poolId);
+    }
 }
 
 void DescHandle::recvDescriptor(qintptr desc) {
@@ -74,6 +91,7 @@ void DescHandle::initLogin() {
 
 void DescHandle::loginFailed(const QJsonObject &resultJson) {
     QByteArray data = QJsonDocument(resultJson).toJson();
+
     QMutexLocker locker(&userLock);
     {
         userPool.value(resultJson["tempId"].toInt()).tcpSocket.data()->write(data);
@@ -82,7 +100,9 @@ void DescHandle::loginFailed(const QJsonObject &resultJson) {
 }
 
 void DescHandle::loginSuccess(const QJsonObject &rootJson, const QJsonObject &resultJson) {
+    qDebug() << resultJson["tempId"].toInt();
     QByteArray data = QJsonDocument(resultJson).toJson();
+
     QMutexLocker locker(&userLock);
     {
         User &object = userPool[rootJson["uid"].toInt()];
@@ -93,4 +113,13 @@ void DescHandle::loginSuccess(const QJsonObject &rootJson, const QJsonObject &re
     }
 }
 
+void DescHandle::registerHandle(const QJsonObject &registerResult) {
+    qDebug() << registerResult["tempId"].toInt();
+    QByteArray data = QJsonDocument(registerResult).toJson();
 
+    QMutexLocker locker(&tempLock);
+    {
+        regPool.value(registerResult["tempId"].toInt()).data()->write(data);
+        regPool.remove(registerResult["temId"].toInt());
+    }
+}

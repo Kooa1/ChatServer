@@ -14,7 +14,6 @@
 #include <QThread>
 #include <QThreadPool>
 
-#include "../include/login.h"
 
 //用户数据
 struct User {
@@ -44,30 +43,34 @@ public slots:
     //工作函数
     void working();
 
-    void onReadyread(QSharedPointer<QTcpSocket>);
-    void onDisconnect(QSharedPointer<QTcpSocket> &);
+    void onReadyRead(const User &, QSharedPointer<QTcpSocket>);
+
+    void onDisconnect(qint32);
 
     void loginFailed(const QJsonObject &);
 
     void loginSuccess(const QJsonObject &, const QJsonObject &);
 
-private:
-    //常驻登陆线程
-    QThread *loginThread;
-    Login *guardLogin;
+    void registerHandle(const QJsonObject &);
 
-    //队列锁
+private:
+    //描述符队列锁
     QMutex queLock;
     //套接字描述服队列
     QQueue<qintptr> descQue;
 
     //临时id
     qint32 tempId = 0;
+
+    //注册用户池锁
+    QMutex tempLock;
+    //注册用户临时套接字
+    QHash<qint32, QSharedPointer<QTcpSocket>> regPool;
+
     //用户池锁
     QMutex userLock;
     //用户池
     QHash<qint32, User> userPool;
-
 
 private:
     //行为检测
@@ -77,7 +80,6 @@ private:
     void initLogin();
 
 signals:
-
     //login工作函数开始工作信号
     void loginStart();
 
