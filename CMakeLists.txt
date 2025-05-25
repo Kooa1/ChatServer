@@ -14,16 +14,16 @@ find_package(Qt5 COMPONENTS
 
 add_executable(ChatServer
         src/main.cpp
-        src/tcpserver.cpp
         include/tcpserver.h
-        src/connectionpool.cpp
+        src/tcpserver.cpp
         include/connectionpool.h
+        src/connectionpool.cpp
+        include/deschandle.h
+        src/deschandle.cpp
         include/register.h
         src/register.cpp
         include/login.h
         src/login.cpp
-        src/deschandle.cpp
-        include/deschandle.h
 )
 target_link_libraries(ChatServer
         Qt5::Core

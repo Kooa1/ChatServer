@@ -20,9 +20,8 @@
 class Register : public QRunnable {
 
 public:
-    explicit Register(QObject *, QJsonObject);
+    explicit Register(QObject*, QJsonObject);
 
-    //重载
     void run() override;
 
 private:

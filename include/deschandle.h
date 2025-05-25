@@ -17,7 +17,7 @@
 
 //用户数据
 struct User {
-    qint32 uid;
+    qint32 uid{};
     QJsonObject userInfo;
     QSharedPointer<QTcpSocket> tcpSocket;
 
@@ -36,7 +36,6 @@ public:
     explicit DescHandle(QObject *parent = nullptr);
 
 public slots:
-
     //套接字描述符接收
     void recvDescriptor(qintptr);
 
