@@ -15,6 +15,7 @@
 
 #include "../include/login.h"
 
+//用户数据
 struct User {
     qint32 uid;
     QJsonObject userInfo;
@@ -24,6 +25,7 @@ struct User {
 
     User(QSharedPointer<QTcpSocket> socket)
             : tcpSocket(socket) {}
+
 };
 
 class DescHandle : public QObject {
@@ -42,7 +44,7 @@ public slots:
     void working();
 
 //    void onReadyread(QSharedPointer<QTcpSocket>);
-//    void onDisconnect();
+    void onDisconnect(QSharedPointer<QTcpSocket> &);
 
     void loginFailed(const QJsonObject &);
 
@@ -64,6 +66,7 @@ private:
     QMutex userLock;
     //用户池
     QHash<qint32, User> userPool;
+
 
 private:
     //行为检测
