@@ -21,31 +21,25 @@
 #include <QJsonDocument>
 #include <QMetaType>
 #include <QJsonArray>
+#include <QRunnable>
+#include <QMetaObject>
 
-class Login : public QObject {
-Q_OBJECT
-
+class Login : public QRunnable {
 public:
-    explicit Login(QObject *);
+    explicit Login(QObject *, qint32, QJsonObject);
 
     ~Login() override;
 
+    void run() override;
+
 public slots:
-
-    //工作函数
-    void worker();
-
-    //数据接收函数
-    void recvData(qint32, const QJsonObject &);
 
 private:
     //上级对象指针
     QObject *object;
 
-    //json队列锁
-    QMutex qLock;
-    //json数据队列
-    QQueue<QPair<qint32, QJsonObject> > jsonQueue;
+    qint32 tempId;
+    QJsonObject tempJson;
 
 private:
     //数据库验证账号
@@ -53,15 +47,6 @@ private:
 
     //构造json
     QJsonObject buildJsonMsg(qint32, qint32, const QString &);
-
-signals:
-
-//    //发送失败数据
-//    void sendFailedResult(const QJsonObject &);
-//
-//    //发送成功数据
-//    void sendSuccessResult(const QJsonObject &, const QJsonObject &);
-
 };
 
 #endif //CHATSERVER_LOGIN_H

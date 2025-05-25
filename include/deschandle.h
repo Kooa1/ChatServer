@@ -12,6 +12,7 @@
 #include <QMetaObject>
 #include <QQueue>
 #include <QThread>
+#include <QThreadPool>
 
 #include "../include/login.h"
 
@@ -43,7 +44,7 @@ public slots:
     //工作函数
     void working();
 
-//    void onReadyread(QSharedPointer<QTcpSocket>);
+    void onReadyread(QSharedPointer<QTcpSocket>);
     void onDisconnect(QSharedPointer<QTcpSocket> &);
 
     void loginFailed(const QJsonObject &);
