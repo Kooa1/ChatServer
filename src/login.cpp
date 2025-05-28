@@ -49,7 +49,7 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
     }
 
     QSqlQuery query(db);
-    QString sql = "SELECT uid, phone, password_hash, salt, account_status FROM users";
+    QString sql = "SELECT u.uid,u.phone,u.password_hash,u.salt,u.account_status,p.avatar FROM users u LEFT JOIN user_profiles p ON u.uid = p.uid;";
 
     if (!query.exec(sql)) {
         qDebug() << "sql exec error";
@@ -67,6 +67,7 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
     QJsonObject root;
     QJsonArray friendships;
     root["uid"];
+    root["avatar"];
     root["friendships"];
 
     //认证flag
@@ -76,6 +77,7 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
         if (query.value(1).toString() == json["account"].toString() &&
             query.value(2).toString() == json["password"].toString() + query.value(3).toString()) {
             root["uid"] = query.value(0).toInt();
+            root["uid"] = query.value(5).toString();
             userFound = true;
             break;
         }
