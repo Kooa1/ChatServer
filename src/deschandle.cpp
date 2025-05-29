@@ -44,56 +44,64 @@ void DescHandle::actionCheck() {
             });
 }
 
+//void DescHandle::onReadyRead(const User &user, QSharedPointer<QTcpSocket> sock) {
+//    auto &buffer = user.getBuffer();
+//
+//    buffer.append(sock.data()->readAll());
+//
+//    if (buffer.size() < 20) {
+//        return;
+//    }
+//
+//    QDataStream stream(buffer);
+//    stream.setByteOrder(QDataStream::BigEndian);
+//
+//    quint32 MAGIC_NUMBER, COMMAND_TYPE, jsonLength;
+//    quint64 timestamp;
+//
+//    stream >> MAGIC_NUMBER >> COMMAND_TYPE >> timestamp >> jsonLength;
+//
+//    qDebug() << "magic" << MAGIC_NUMBER;
+//    qDebug() << "command" << COMMAND_TYPE;
+//    qDebug() << "time" << timestamp;
+//    qDebug() << "len" << jsonLength;
+//
+//    QJsonObject json = QJsonDocument::fromJson(buffer.mid(20, jsonLength)).object();
+//
+//    buffer.remove(0, 20 + jsonLength);
+//
+//    json.insert("tempId", ++tempId);
+//    if (COMMAND_TYPE == 2) {
+//        QMutexLocker RPL(&tempLock);
+//        {
+//            sock.data()->setProperty("tempId", tempId);
+//            regPool.insert(tempId, sock);
+//        }
+//
+//        QThreadPool::globalInstance()->start(new Register(this, json));
+//
+//    } else if (COMMAND_TYPE == 1) {
+//        qDebug() << "login";
+//        QMutexLocker UPL(&userLock);
+//        {
+//            user.tcpSocket.data()->setProperty("tempId", tempId);
+//            userPool.insert(tempId, user);
+//        }
+//
+//        QThreadPool::globalInstance()->start(new Login(this, json));
+//
+//    } else {
+//
+//    }
+//}
+
 void DescHandle::onReadyRead(const User &user, QSharedPointer<QTcpSocket> sock) {
     auto &buffer = user.getBuffer();
-
     buffer.append(sock.data()->readAll());
 
-    if (buffer.size() < 20) {
-        return;
-    }
 
-    QDataStream stream(buffer);
-    stream.setByteOrder(QDataStream::BigEndian);
-
-    quint32 MAGIC_NUMBER, COMMAND_TYPE, jsonLength;
-    quint64 timestamp;
-
-    stream >> MAGIC_NUMBER >> COMMAND_TYPE >> timestamp >> jsonLength;
-
-    qDebug() << "magic" << MAGIC_NUMBER;
-    qDebug() << "command" << COMMAND_TYPE;
-    qDebug() << "time" << timestamp;
-    qDebug() << "len" << jsonLength;
-
-    QJsonObject json = QJsonDocument::fromJson(buffer.mid(20, jsonLength)).object();
-
-    buffer.remove(0, 20 + jsonLength);
-
-    json.insert("tempId", ++tempId);
-    if (COMMAND_TYPE == 2) {
-        QMutexLocker RPL(&tempLock);
-        {
-            sock.data()->setProperty("tempId", tempId);
-            regPool.insert(tempId, sock);
-        }
-
-        QThreadPool::globalInstance()->start(new Register(this, json));
-
-    } else if (COMMAND_TYPE == 1) {
-        qDebug() << "login";
-        QMutexLocker UPL(&userLock);
-        {
-            user.tcpSocket.data()->setProperty("tempId", tempId);
-            userPool.insert(tempId, user);
-        }
-
-        QThreadPool::globalInstance()->start(new Login(this, json));
-
-    } else {
-
-    }
 }
+
 
 void DescHandle::onDisconnect(qint32 poolId) {
     QMutexLocker locker(&userLock);

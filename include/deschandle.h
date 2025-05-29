@@ -59,8 +59,6 @@ public slots:
 
     void registerHandle(const QJsonObject &);
 
-    void handleCommand();
-
 private:
     //描述符队列锁
     QMutex queLock;
