@@ -77,7 +77,6 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
         if (query.value(1).toString() == json["account"].toString() &&
             query.value(2).toString() == json["password"].toString() + query.value(3).toString()) {
             root["uid"] = query.value(0).toInt();
-            root["uid"] = query.value(5).toString();
             userFound = true;
             break;
         }

@@ -14,6 +14,7 @@
 #include <QThread>
 #include <QThreadPool>
 #include <utility>
+#include <QDataStream>
 
 
 //用户数据
@@ -21,12 +22,16 @@ struct User {
     qint32 uid;
     QJsonObject userInfo;
     QSharedPointer<QTcpSocket> tcpSocket;
+    mutable QByteArray buffer;
 
     User() = default;
 
     User(QSharedPointer<QTcpSocket> socket)
-            : tcpSocket(socket) {}
+            : tcpSocket(std::move(socket)) {}
 
+    QByteArray & getBuffer() const {
+        return buffer;
+    }
 };
 
 class DescHandle : public QObject {
@@ -37,6 +42,7 @@ public:
     explicit DescHandle(QObject *parent = nullptr);
 
 public slots:
+
     //套接字描述符接收
     void recvDescriptor(qintptr);
 
@@ -52,6 +58,8 @@ public slots:
     void loginSuccess(const QJsonObject &, const QJsonObject &);
 
     void registerHandle(const QJsonObject &);
+
+    void handleCommand();
 
 private:
     //描述符队列锁
@@ -72,6 +80,9 @@ private:
     //用户池
     QHash<qint32, User> userPool;
 
+    //数据缓冲池;
+//    QHash<QSharedPointer<QTcpSocket>, QByteArray> buffer;
+
 private:
     //行为检测
     void actionCheck();
@@ -80,6 +91,7 @@ private:
     void initLogin();
 
 signals:
+
     //login工作函数开始工作信号
     void loginStart();
 

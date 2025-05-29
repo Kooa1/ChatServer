@@ -8,6 +8,8 @@
 
 DescHandle::DescHandle(QObject *parent) : QObject(parent) {
     initLogin();
+
+
 }
 
 void DescHandle::working() {
@@ -31,7 +33,7 @@ void DescHandle::actionCheck() {
 
     connect(user.tcpSocket.data(),
             &QTcpSocket::readyRead,
-            [this, user, sock = user.tcpSocket]() {
+            [this, user = user, sock = user.tcpSocket]() {
                 onReadyRead(user, sock);
             });
 
@@ -43,9 +45,33 @@ void DescHandle::actionCheck() {
 }
 
 void DescHandle::onReadyRead(const User &user, QSharedPointer<QTcpSocket> sock) {
-    QJsonObject json = QJsonDocument::fromJson(user.tcpSocket.data()->readAll()).object();
+    auto &buffer = user.getBuffer();
+
+    buffer.append(sock.data()->readAll());
+
+    if (buffer.size() < 20) {
+        return;
+    }
+
+    QDataStream stream(buffer);
+    stream.setByteOrder(QDataStream::BigEndian);
+
+    quint32 MAGIC_NUMBER, COMMAND_TYPE, jsonLength;
+    quint64 timestamp;
+
+    stream >> MAGIC_NUMBER >> COMMAND_TYPE >> timestamp >> jsonLength;
+
+    qDebug() << "magic" << MAGIC_NUMBER;
+    qDebug() << "command" << COMMAND_TYPE;
+    qDebug() << "time" << timestamp;
+    qDebug() << "len" << jsonLength;
+
+    QJsonObject json = QJsonDocument::fromJson(buffer.mid(20, jsonLength)).object();
+
+    buffer.remove(0, 20 + jsonLength);
+
     json.insert("tempId", ++tempId);
-    if (json["action"] == "register") {
+    if (COMMAND_TYPE == 2) {
         QMutexLocker RPL(&tempLock);
         {
             sock.data()->setProperty("tempId", tempId);
@@ -54,7 +80,7 @@ void DescHandle::onReadyRead(const User &user, QSharedPointer<QTcpSocket> sock) 
 
         QThreadPool::globalInstance()->start(new Register(this, json));
 
-    } else if (json["action"] == "login") {
+    } else if (COMMAND_TYPE == 1) {
         qDebug() << "login";
         QMutexLocker UPL(&userLock);
         {
@@ -65,7 +91,7 @@ void DescHandle::onReadyRead(const User &user, QSharedPointer<QTcpSocket> sock) 
         QThreadPool::globalInstance()->start(new Login(this, json));
 
     } else {
-        qDebug() << "other";
+
     }
 }
 
@@ -103,6 +129,7 @@ void DescHandle::loginSuccess(const QJsonObject &rootJson, const QJsonObject &re
     qDebug() << resultJson["tempId"].toInt();
     QByteArray data = QJsonDocument(resultJson).toJson();
 
+    qDebug() << rootJson;
     QMutexLocker locker(&userLock);
     {
         User &object = userPool[rootJson["uid"].toInt()];
