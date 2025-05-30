@@ -11,6 +11,9 @@ int main(int argc, char *argv[]) {
     qRegisterMetaType<qintptr>("qintptr");
     qRegisterMetaType<qintptr>("qintptr&");
 
+    qRegisterMetaType<QSharedPointer<QTcpSocket>>("QSharedPointer<QTcpSocket>");
+
+
     //数据库连接
     const QString hostName = "8.148.211.115";
     const QString dbName = "chat_app";

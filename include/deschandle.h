@@ -28,10 +28,6 @@ struct User {
 
     User(QSharedPointer<QTcpSocket> socket)
             : tcpSocket(std::move(socket)) {}
-
-    QByteArray & getBuffer() const {
-        return buffer;
-    }
 };
 
 class DescHandle : public QObject {
@@ -58,6 +54,8 @@ public slots:
     void loginSuccess(const QJsonObject &, const QJsonObject &);
 
     void registerHandle(const QJsonObject &);
+
+    void taskAssign(qint32, qint32, const QJsonObject &);
 
 private:
     //描述符队列锁
@@ -95,6 +93,9 @@ signals:
 
     //数据发送
     void sendLoginData(qint32, const QJsonObject &);
+
+    //读毕
+    void readComplete(qint32, qint32, const QJsonObject &);
 
 };
 
