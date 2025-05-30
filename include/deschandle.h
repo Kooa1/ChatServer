@@ -49,7 +49,7 @@ public slots:
     //工作函数
     void working();
 
-    void onReadyRead(const User &, QSharedPointer<QTcpSocket>);
+    void onReadyRead(qint32);
 
     void onDisconnect(qint32);
 
@@ -71,7 +71,7 @@ private:
     //注册用户池锁
     QMutex tempLock;
     //注册用户临时套接字
-    QHash<qint32, QSharedPointer<QTcpSocket>> regPool;
+    QHash<qint32, QSharedPointer<QTcpSocket>> tempPool;
 
     //用户池锁
     QMutex userLock;
