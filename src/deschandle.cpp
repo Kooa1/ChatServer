@@ -8,6 +8,8 @@
 
 DescHandle::DescHandle(QObject *parent) : QObject(parent) {
     initLogin();
+
+    connect(this, &DescHandle::readComplete, this, &DescHandle::taskAssign);
 }
 
 void DescHandle::working() {
@@ -19,7 +21,7 @@ void DescHandle::actionCheck() {
     //智能指针
     QSharedPointer<QTcpSocket> tcpSocket = QSharedPointer<QTcpSocket>(new QTcpSocket);
 
-    QMutexLocker locker(&queLock);
+    QMutexLocker QLK(&queLock);
     {
         if (!tcpSocket.data()->setSocketDescriptor(descQue.dequeue())) {
             qWarning() << "desc bind failed : " << tcpSocket.data()->errorString();
@@ -27,22 +29,30 @@ void DescHandle::actionCheck() {
         }
         tcpSocket.data()->setProperty("tempId", ++tempId);
         tempPool.insert(tempId, tcpSocket);
-
-        connect(tcpSocket.data(), &QTcpSocket::readyRead, this, [this, tcpSocket]() {
-            onReadyRead(tcpSocket.data()->property("tempId").toInt());
-        });
-        connect(tcpSocket.data(), &QTcpSocket::disconnected, this, [this, tcpSocket]() {
-            onDisconnect(tcpSocket.data()->property("tempId").toInt());
-        });
-
-        qDebug() << "complete";
     }
+
+    QMutexLocker BLK(&bufferLock);
+    {
+        bufferPool.insert(tempId, QByteArray());
+    }
+
+    //信号连接
+    connect(tcpSocket.data(), &QTcpSocket::readyRead, this, [this, tcpSocket]() {
+        onReadyRead(tcpSocket.data()->property("tempId").toInt());
+    });
+    connect(tcpSocket.data(), &QTcpSocket::disconnected, this, [this, tcpSocket]() {
+        onDisconnect(tcpSocket.data()->property("tempId").toInt());
+    });
+
+    qDebug() << "complete" << tempId;
 }
 
 void DescHandle::onReadyRead(qint32 tid) {
-    qDebug() << tempPool.value(tid);
-    QByteArray buffer;
-    buffer = tempPool.value(tid).data()->readAll();
+    qDebug() << "ready read";
+    QMutexLocker BFL(&bufferLock);
+    QByteArray &buffer = bufferPool[tid];
+
+    buffer.append(tempPool.value(tid)->readAll());
 
     while (true) {
         if (buffer.size() < 20) return;
@@ -50,59 +60,61 @@ void DescHandle::onReadyRead(qint32 tid) {
         QDataStream streamData(buffer);
         streamData.setByteOrder(QDataStream::BigEndian);
 
-        quint32 MAGIC_NUMBER, COMMAND_TYPE, jsonLength;
-        quint64 TIMESTAMP;
+        quint32 MAGIC_NUMBER, COMMAND_TYPE, DATALENGTH; quint64 TIMESTAMP;
 
-        streamData >> MAGIC_NUMBER >> COMMAND_TYPE >> TIMESTAMP >> jsonLength;
+        streamData >> MAGIC_NUMBER >> COMMAND_TYPE >> TIMESTAMP >> DATALENGTH;
 
         qDebug() << "magic" << MAGIC_NUMBER;
         qDebug() << "command" << COMMAND_TYPE;
-        qDebug() << "jsonLength" << jsonLength;
+        qDebug() << "DATALENGTH" << DATALENGTH;
         qDebug() << "timestamp" << TIMESTAMP;
 
         if (MAGIC_NUMBER != 0x4A3B2C1D) {
             qWarning() << "Invalid magic number, closing connection";
             tempPool.value(tid).data()->abort();
+            tempPool.remove(tid);
+            bufferPool.remove(tid);
             return;
         }
 
-        int totalPacketSize = 20 + jsonLength;
-        if (buffer.size() != totalPacketSize) return;
+        qint32 totalPacketSize = 20 + DATALENGTH;
+        if (buffer.size() < totalPacketSize) return;
 
-        QByteArray jsonData = buffer.mid(20, jsonLength);
-        QJsonObject json = QJsonDocument::fromJson(jsonData).object();
-
-        if (json.isEmpty()) {
-            qWarning() << "Invalid JSON data";
-            buffer.remove(0, totalPacketSize);
-            continue; // 继续处理下一条消息
-        }
-
+        QByteArray packet = buffer.left(totalPacketSize);
         buffer.remove(0, totalPacketSize);
 
-        emit readComplete(tid, COMMAND_TYPE, json);
-
-        if (buffer.isEmpty()) {
-            break;
-        }
+        emit readComplete(COMMAND_TYPE, tid, packet);
     }
 }
 
-void DescHandle::taskAssign(qint32 id, qint32 command, const QJsonObject &jsonObject) {
-    if (command == 1) {
-        if (!tempPool.value(id)->isValid()){
-            tempPool.remove(id);
-            return;
+void DescHandle::taskAssign(qint32 COMMAND_TYPE, qint32 tid, const QByteArray &packet) {
+    qDebug() << "tid" << tid;
+    try {
+        switch (COMMAND_TYPE) {
+            //登录注册同一逻辑
+            case 0x001:
+            case 0x002: {
+                QByteArray jsonData = packet.mid(20);
+                QJsonObject json = QJsonDocument::fromJson(jsonData).object();
+                json["tempId"] = tid;
+
+                User user{QSharedPointer<QTcpSocket>(tempPool.value(tid))};
+                userPool.insert(tid, user);
+                bufferPool.remove(tid);
+
+                QThreadPool::globalInstance()->start(new Login(this, json));
+                return;
+            }
+                //头像上传
+            case 0x003: {
+                return;
+            }
+            default:
+                qWarning() << "Unknown command type:" << COMMAND_TYPE;
+                return;
         }
-        User user{QSharedPointer<QTcpSocket> (tempPool.take(id))};
-        QThreadPool::globalInstance()->start(new Login(this, jsonObject));
-        return;
-    }
-    if (command == 2) {
-
-    }
-    if (command == 3) {
-
+    } catch (const std::exception &e){
+        qCritical() << e.what();
     }
 }
 
@@ -110,6 +122,7 @@ void DescHandle::onDisconnect(qint32 poolId) {
     QMutexLocker locker(&userLock);
     {
         userPool.remove(poolId);
+        qDebug() << "remove :" << poolId;
     }
 }
 
@@ -136,7 +149,7 @@ void DescHandle::loginFailed(const QJsonObject &resultJson) {
 }
 
 void DescHandle::loginSuccess(const QJsonObject &rootJson, const QJsonObject &resultJson) {
-    qDebug() << resultJson["tempId"].toInt();
+    qDebug() << "tempid" << resultJson["tempId"].toInt();
     QByteArray data = QJsonDocument(resultJson).toJson();
 
     qDebug() << rootJson;

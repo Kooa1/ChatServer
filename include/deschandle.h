@@ -45,17 +45,23 @@ public slots:
     //工作函数
     void working();
 
+    //读
     void onReadyRead(qint32);
 
+    //断
     void onDisconnect(qint32);
 
+    //登录失败
     void loginFailed(const QJsonObject &);
 
+    //登录成功
     void loginSuccess(const QJsonObject &, const QJsonObject &);
 
+    //注册逻辑
     void registerHandle(const QJsonObject &);
 
-    void taskAssign(qint32, qint32, const QJsonObject &);
+    //任务分配
+    void taskAssign(qint32, qint32, const QByteArray&);
 
 private:
     //描述符队列锁
@@ -71,13 +77,15 @@ private:
     //注册用户临时套接字
     QHash<qint32, QSharedPointer<QTcpSocket>> tempPool;
 
+    //缓冲池锁
+    QMutex bufferLock;
+    //临时缓冲区
+    QHash<qint32, QByteArray> bufferPool;
+
     //用户池锁
     QMutex userLock;
     //用户池
     QHash<qint32, User> userPool;
-
-    //数据缓冲池;
-//    QHash<QSharedPointer<QTcpSocket>, QByteArray> buffer;
 
 private:
     //行为检测
@@ -95,7 +103,7 @@ signals:
     void sendLoginData(qint32, const QJsonObject &);
 
     //读毕
-    void readComplete(qint32, qint32, const QJsonObject &);
+    void readComplete(qint32, qint32, const QByteArray&);
 
 };
 
