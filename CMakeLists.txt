@@ -24,6 +24,8 @@ add_executable(ChatServer
         src/register.cpp
         include/login.h
         src/login.cpp
+        src/otherhandle.cpp
+        include/otherhandle.h
 )
 target_link_libraries(ChatServer
         Qt5::Core

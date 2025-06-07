@@ -26,7 +26,7 @@ struct User {
 
     User() = default;
 
-    User(QSharedPointer<QTcpSocket> socket)
+    explicit User(QSharedPointer<QTcpSocket> socket)
             : tcpSocket(std::move(socket)) {}
 };
 
@@ -61,7 +61,7 @@ public slots:
     void registerHandle(const QJsonObject &);
 
     //任务分配
-    void taskAssign(qint32, qint32, const QByteArray&);
+    void taskAssign(qint32, qint32, const QByteArray &);
 
 private:
     //描述符队列锁
@@ -71,17 +71,6 @@ private:
 
     //临时id
     qint32 tempId = 0;
-
-    //注册用户池锁
-    QMutex tempLock;
-    //注册用户临时套接字
-    QHash<qint32, QSharedPointer<QTcpSocket>> tempPool;
-
-    //缓冲池锁
-    QMutex bufferLock;
-    //临时缓冲区
-    QHash<qint32, QByteArray> bufferPool;
-
     //用户池锁
     QMutex userLock;
     //用户池
@@ -103,7 +92,7 @@ signals:
     void sendLoginData(qint32, const QJsonObject &);
 
     //读毕
-    void readComplete(qint32, qint32, const QByteArray&);
+    void readComplete(qint32, qint32, const QByteArray &);
 
 };
 

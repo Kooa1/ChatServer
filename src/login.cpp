@@ -17,7 +17,6 @@ void Login::run() {
     if (loginResult(tempId, tempJson)) {
         qDebug() << "success";
     }
-
 }
 
 bool Login::loginResult(qint32 id, const QJsonObject &json) {
@@ -49,7 +48,7 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
     }
 
     QSqlQuery query(db);
-    QString sql = "SELECT u.uid,u.phone,u.password_hash,u.salt,u.account_status,p.avatar FROM users u LEFT JOIN user_profiles p ON u.uid = p.uid;";
+    QString sql = "SELECT uid,phone,password_hash,salt,account_status FROM users;";
 
     if (!query.exec(sql)) {
         qDebug() << "sql exec error";
@@ -67,7 +66,6 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
     QJsonObject root;
     QJsonArray friendships;
     root["uid"];
-    root["avatar"];
     root["friendships"];
 
     //认证flag
