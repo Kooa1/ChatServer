@@ -111,7 +111,7 @@ void DescHandle::taskAssign(qint32 COMMAND_TYPE, qint32 tid, const QByteArray &p
             }
             break;
         }
-            //头像上传
+        //头像上传
         case 0x003: {
             qDebug() << "0x003";
             break;

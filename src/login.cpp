@@ -91,7 +91,8 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
     }
 
     //好友关系查询
-    query.prepare("SELECT * FROM friendships WHERE user1_id = ?");
+//    query.prepare("SELECT * FROM friendships WHERE user1_id = ?");
+    query.prepare("SELECT u.* FROM user_profiles u JOIN friendships f ON u.uid = f.user2_id WHERE f.user1_id = ?;");
     query.addBindValue(root["uid"].toInt());
     if (!query.exec()) {
         ConnectionPool::instance().releaseConnection(db);
@@ -106,7 +107,7 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
 
     while (query.next()) {
         QJsonArray data;
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 8; ++i) {
             data.append(query.value(i).toString());
         }
         friendships.append(data);
