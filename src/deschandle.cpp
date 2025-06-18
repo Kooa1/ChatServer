@@ -38,10 +38,10 @@ void DescHandle::actionCheck() {
     //信号连接
     connect(user.tcpSocket.data(), &QTcpSocket::readyRead, this, [this, user]() {
         onReadyRead(user.tcpSocket.data()->property("tempId").toInt());
-    });
+    }, Qt::QueuedConnection);
     connect(user.tcpSocket.data(), &QTcpSocket::disconnected, this, [this, user]() {
         onDisconnect(user.tcpSocket.data()->property("tempId").toInt());
-    });
+    }, Qt::QueuedConnection);
 
     qDebug() << "complete" << tempId;
 }
@@ -178,3 +178,20 @@ void DescHandle::registerHandle(const QJsonObject &registerResult) {
         userPool.remove(registerResult["temId"].toInt());
     }
 }
+
+QByteArray DescHandle::buildStream(const quint32 COMMAND_TYPE, const QJsonObject &jsonObject) {
+    QByteArray data;
+    QByteArray jsonData = QJsonDocument(jsonObject).toJson(QJsonDocument::Compact);
+    QDataStream buffer(&data, QIODevice::WriteOnly);
+    buffer.setByteOrder(QDataStream::BigEndian);
+
+    const quint32 MAGIC_NUMBER = 0x4A3B2C1D;
+    const quint64 TIMESTAMPS = QDateTime::currentMSecsSinceEpoch();
+
+    buffer << MAGIC_NUMBER << COMMAND_TYPE << TIMESTAMPS << static_cast<quint32>(jsonData.size());
+    data.append(jsonData);
+
+    return data;
+}
+
+
