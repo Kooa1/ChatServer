@@ -64,7 +64,8 @@ public slots:
     void taskAssign(qint32, qint32, const QByteArray &);
 
     //构造二进制数据
-    QByteArray buildStream(const quint32 COMMAND_TYPE, const QJsonObject &jsonObject);
+    QByteArray buildStream(const quint32 COMMAND_TYPE,
+        const QJsonObject &jsonObject);
 
 private:
     //描述符队列锁

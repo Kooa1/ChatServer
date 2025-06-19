@@ -112,14 +112,17 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
         }
         friendships.append(data);
     }
-    root.insert("friendships", friendships);
+    // root.insert("friendships", friendships);
+    QJsonObject jsonObject = buildJsonMsg(0x001, QString("Success"));
+    jsonObject.insert("friendships", friendships);
 
     QMetaObject::invokeMethod(
             object,
             "loginSuccess",
             Qt::QueuedConnection,
             Q_ARG(const QJsonObject&, root),
-            Q_ARG(const QJsonObject&, buildJsonMsg(0x001, QString("Success")))
+            // Q_ARG(const QJsonObject&, buildJsonMsg(0x001, QString("Success")))
+            Q_ARG(const QJsonObject&, jsonObject)
     );
 
     ConnectionPool::instance().releaseConnection(db);

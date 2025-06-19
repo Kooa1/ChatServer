@@ -155,9 +155,10 @@ void DescHandle::loginFailed(const QJsonObject &resultJson) {
 
 void DescHandle::loginSuccess(const QJsonObject &rootJson, const QJsonObject &resultJson) {
     qDebug() << "tempid" << resultJson["tempId"].toInt();
-    QByteArray data = QJsonDocument(resultJson).toJson();
+    // QByteArray data = QJsonDocument(resultJson).toJson();
+    QByteArray data = buildStream(3,resultJson);
 
-    qDebug() << rootJson;
+    // qDebug() << rootJson;
     QMutexLocker locker(&userLock);
     {
         User &object = userPool[rootJson["uid"].toInt()];
@@ -170,7 +171,8 @@ void DescHandle::loginSuccess(const QJsonObject &rootJson, const QJsonObject &re
 
 void DescHandle::registerHandle(const QJsonObject &registerResult) {
     qDebug() << registerResult["tempId"].toInt();
-    QByteArray data = QJsonDocument(registerResult).toJson();
+    // QByteArray data = QJsonDocument(registerResult).toJson();
+    QByteArray data = buildStream(2, registerResult);
 
     QMutexLocker locker(&userLock);
     {
@@ -188,7 +190,7 @@ QByteArray DescHandle::buildStream(const quint32 COMMAND_TYPE, const QJsonObject
     const quint32 MAGIC_NUMBER = 0x4A3B2C1D;
     const quint64 TIMESTAMPS = QDateTime::currentMSecsSinceEpoch();
 
-    buffer << MAGIC_NUMBER << COMMAND_TYPE << TIMESTAMPS << static_cast<quint32>(jsonData.size());
+    buffer << MAGIC_NUMBER << COMMAND_TYPE << TIMESTAMPS << jsonData.size();
     data.append(jsonData);
 
     return data;
