@@ -23,6 +23,7 @@
 #include <QJsonArray>
 #include <QRunnable>
 #include <QMetaObject>
+#include <QSqlRecord>
 
 class Login : public QRunnable {
 public:

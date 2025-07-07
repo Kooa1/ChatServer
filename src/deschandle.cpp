@@ -7,8 +7,6 @@
 #include "../include/deschandle.h"
 
 DescHandle::DescHandle(QObject *parent) : QObject(parent) {
-    initLogin();
-
     connect(this, &DescHandle::readComplete, this, &DescHandle::taskAssign);
 }
 
@@ -138,9 +136,6 @@ void DescHandle::recvDescriptor(qintptr desc) {
     }
 
     QMetaObject::invokeMethod(this->parent(), "startWorker", Qt::QueuedConnection);
-}
-
-void DescHandle::initLogin() {
 }
 
 void DescHandle::loginFailed(const QJsonObject &resultJson) {

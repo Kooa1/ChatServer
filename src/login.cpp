@@ -92,8 +92,14 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
 
     //好友关系查询
 //    query.prepare("SELECT * FROM friendships WHERE user1_id = ?");
-    query.prepare("SELECT u.* FROM user_profiles u JOIN friendships f ON u.uid = f.user2_id WHERE f.user1_id = ?;");
+    query.prepare("SELECT u.* FROM user_profiles u JOIN "
+                  "(SELECT user2_id AS friend_id FROM friendships WHERE user1_id = ? "
+                  "UNION SELECT user1_id AS friend_id FROM friendships WHERE user2_id = ? ) "
+                  "AS friends ON u.uid = friends.friend_id;");
+
     query.addBindValue(root["uid"].toInt());
+    query.addBindValue(root["uid"].toInt());
+
     if (!query.exec()) {
         ConnectionPool::instance().releaseConnection(db);
         QMetaObject::invokeMethod(
@@ -109,9 +115,11 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
         QJsonArray data;
         for (int i = 0; i < 8; ++i) {
             data.append(query.value(i).toString());
+            qDebug() << data;
         }
         friendships.append(data);
     }
+
     // root.insert("friendships", friendships);
     QJsonObject jsonObject = buildJsonMsg(0x001, QString("Success"));
     jsonObject.insert("friendships", friendships);

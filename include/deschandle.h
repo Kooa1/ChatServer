@@ -60,6 +60,9 @@ public slots:
     //注册逻辑
     void registerHandle(const QJsonObject &);
 
+    //消息发送
+//    void sendMsg(const QJsonObject &);
+
     //任务分配
     void taskAssign(qint32, qint32, const QByteArray &);
 
@@ -83,9 +86,6 @@ private:
 private:
     //行为检测
     void actionCheck();
-
-    //初始化常驻登陆线程
-    void initLogin();
 
 signals:
 
