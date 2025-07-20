@@ -34,7 +34,10 @@ public:
 private:
     //单例模式-私有构造
     explicit ConnectionPool(QObject *paren = nullptr);
-    ~ConnectionPool();
+    ~ConnectionPool() override;
+
+    ConnectionPool(const ConnectionPool &) = delete;
+    ConnectionPool &operator=(const ConnectionPool &) = delete;
 
 private:
 
