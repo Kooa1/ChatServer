@@ -93,7 +93,6 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
     }
 
     //好友关系查询
-//    query.prepare("SELECT * FROM friendships WHERE user1_id = ?");
     query.prepare("SELECT u.* FROM user_profiles u JOIN "
                   "(SELECT user2_id AS friend_id FROM friendships WHERE user1_id = ? "
                   "UNION SELECT user1_id AS friend_id FROM friendships WHERE user2_id = ? ) "
@@ -117,7 +116,7 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
         QJsonArray data;
         for (int i = 0; i < 8; ++i) {
             data.append(query.value(i).toString());
-            qDebug() << data;
+//            qDebug() << data;
         }
         friendships.append(data);
     }
@@ -126,14 +125,17 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
     QJsonObject jsonObject = buildJsonMsg(0x001, QString("Success"));
     jsonObject.insert("friendships", friendships);
     jsonObject.insert("uid", root["uid"].toInt());
+    jsonObject.insert("username", root["username"].toString());
 
+    qDebug() << "json UID" << jsonObject["uid"].toInt();
+    qDebug() << "json username" << jsonObject["username"].toString();
 
     QMetaObject::invokeMethod(
             object,
             "loginSuccess",
             Qt::QueuedConnection,
             Q_ARG(const QJsonObject&, root),
-            // Q_ARG(const QJsonObject&, buildJsonMsg(0x001, QString("Success")))
+//             Q_ARG(const QJsonObject&, buildJsonMsg(0x001, QString("Success"))),
             Q_ARG(const QJsonObject&, jsonObject)
     );
 
