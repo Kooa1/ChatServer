@@ -1,4 +1,5 @@
 #include <QCoreApplication>
+#include <QException>
 
 #include "../include/tcpserver.h"
 #include "../include/connectionpool.h"
@@ -13,9 +14,9 @@ int main(int argc, char *argv[]) {
         qRegisterMetaType<qintptr>("qintptr&");
 
         qRegisterMetaType<QSharedPointer<QTcpSocket>>("QSharedPointer<QTcpSocket>");
-
-
         qRegisterMetaType<QSharedPointer<QTcpSocket>>();
+
+        qRegisterMetaType<Task>("Task");
 
         //数据库连接
         const QString hostName = "8.148.211.115";
@@ -37,8 +38,12 @@ int main(int argc, char *argv[]) {
         TcpServer server;
 
         return QCoreApplication::exec();
+
     } catch (const std::exception &e) {
-        qDebug() << "Exception : " << e.what();
+        qDebug() << "Std exception : " << e.what();
         return -1;
+//    }
+    } catch (const QException &e) {
+        qDebug() << "Qt exception : " << e.what();
     }
 }

@@ -7,6 +7,13 @@
 #include "../include/deschandle.h"
 
 DescHandle::DescHandle(QObject *parent) : QObject(parent) {
+
+    transferStation = new QThread;
+    transmiter = new Transmit;
+
+    transmiter->moveToThread(transferStation);
+
+    connect(this, &DescHandle::start, transmiter, &Transmit::working);
     connect(this, &DescHandle::readComplete, this, &DescHandle::taskAssign);
 }
 
@@ -109,9 +116,25 @@ void DescHandle::taskAssign(qint32 COMMAND_TYPE, qint32 tid, const QByteArray &p
             }
             break;
         }
-        //消息转发
+            //消息转发
         case 0x003: {
+            QJsonObject json = QJsonDocument::fromJson(packet.mid(20)).object();
             qDebug() << "0x003";
+
+            emit start(json);
+            transferStation->start();
+//            QJsonObject json{
+//                    {"action", "send"},
+//                    {"sender", 10002},
+//                    {"senderName", "马丁"},
+//                    {"recipient", 10000},
+//                    {"msgType", 0},
+//                    {"content", "在的"},
+//                    {"outgoing", "0"},
+//                    {"sendTimeStamp", QDateTime::currentSecsSinceEpoch()}
+//            };
+
+
             break;
         }
         default:
@@ -124,8 +147,10 @@ void DescHandle::taskAssign(qint32 COMMAND_TYPE, qint32 tid, const QByteArray &p
 void DescHandle::onDisconnect(qint32 poolId) {
     QMutexLocker locker(&userLock);
     {
-        userPool.remove(poolId);
-        qDebug() << "remove :" << poolId;
+        if (userPool.contains(poolId)) {
+            userPool.remove(poolId);
+            qDebug() << "remove :" << poolId;
+        }
     }
 }
 
@@ -143,15 +168,17 @@ void DescHandle::loginFailed(const QJsonObject &resultJson) {
 
     QMutexLocker locker(&userLock);
     {
-        userPool.value(resultJson["tempId"].toInt()).tcpSocket.data()->write(data);
-        userPool.remove(resultJson["tempId"].toInt());
+        if (userPool.contains(resultJson["tempId"].toInt())) {
+            userPool.value(resultJson["tempId"].toInt()).tcpSocket.data()->write(data);
+            userPool.remove(resultJson["tempId"].toInt());
+        }
     }
 }
 
 void DescHandle::loginSuccess(const QJsonObject &rootJson, const QJsonObject &resultJson) {
     qDebug() << "tempid" << resultJson["tempId"].toInt();
     // QByteArray data = QJsonDocument(resultJson).toJson();
-    QByteArray data = buildStream(3,resultJson);
+    QByteArray data = buildStream(1, resultJson);
 
     // qDebug() << rootJson;
     QMutexLocker locker(&userLock);
@@ -171,8 +198,10 @@ void DescHandle::registerHandle(const QJsonObject &registerResult) {
 
     QMutexLocker locker(&userLock);
     {
-        userPool.value(registerResult["tempId"].toInt()).tcpSocket.data()->write(data);
-        userPool.remove(registerResult["temId"].toInt());
+        if (userPool.contains(registerResult["tempId"].toInt())) {
+            userPool.value(registerResult["tempId"].toInt()).tcpSocket.data()->write(data);
+            userPool.remove(registerResult["temId"].toInt());
+        }
     }
 }
 

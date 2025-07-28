@@ -5,6 +5,7 @@
 #ifndef CHATSERVER_DESCHANDLE_H
 #define CHATSERVER_DESCHANDLE_H
 
+#include <QThread>
 #include <QObject>
 #include <QTcpSocket>
 #include <QJsonObject>
@@ -16,6 +17,7 @@
 #include <utility>
 #include <QDataStream>
 
+#include "../include/transmit.h"
 
 //用户数据
 struct User {
@@ -68,9 +70,13 @@ public slots:
 
     //构造二进制数据
     QByteArray buildStream(const quint32 COMMAND_TYPE,
-        const QJsonObject &jsonObject);
+                           const QJsonObject &jsonObject);
 
 private:
+    //消息转发
+    Transmit *transmiter;
+    QThread *transferStation;
+
     //描述符队列锁
     QMutex queLock;
     //套接字描述服队列
@@ -88,6 +94,8 @@ private:
     void actionCheck();
 
 signals:
+    //中转站start
+    void start(const QJsonObject &);
 
     //login工作函数开始工作信号
     void loginStart();

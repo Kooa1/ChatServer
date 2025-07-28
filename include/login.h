@@ -27,7 +27,7 @@
 
 class Login : public QRunnable {
 public:
-    explicit Login(QObject*,QJsonObject);
+    explicit Login(QObject*, QJsonObject);
 
     ~Login() override;
 
