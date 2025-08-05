@@ -48,9 +48,14 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
     }
 
     QSqlQuery query(db);
-    QString sql = "SELECT uid,phone,password_hash,salt,account_status,username FROM users;";
+    // 第一次查询：验证用户信息
+    QString sql = "SELECT users.uid, users.phone, users.password_hash, users.salt, users.account_status, users.username, user_profiles.avatar "
+                  "FROM users NATURAL JOIN user_profiles WHERE phone = ?";
 
-    if (!query.exec(sql)) {
+    query.prepare(sql);
+    query.addBindValue(json["account"].toString());
+
+    if (!query.exec()) {
         qDebug() << "sql exec error";
         ConnectionPool::instance().releaseConnection(db);
         QMetaObject::invokeMethod(
@@ -64,10 +69,13 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
 
     //用户数据
     QJsonObject root;
-    QJsonArray friendships;
     root["uid"];
     root["username"];
     root["friendships"];
+    root["avatar"];
+
+    QJsonArray friendships;
+    QJsonArray friendUid;
 
     //认证flag
     bool userFound = false;
@@ -77,31 +85,36 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
             query.value(2).toString() == json["password"].toString() + query.value(3).toString()) {
             root["uid"] = query.value(0).toInt();
             root["username"] = query.value(5).toString();
+            root["avatar"] = query.value(6).toString();
+//            qDebug() << query.value(6).toString();
+
             userFound = true;
             break;
         }
     }
 
     if (!userFound) {
+        ConnectionPool::instance().releaseConnection(db);
         QMetaObject::invokeMethod(
                 object,
                 "loginFailed",
                 Qt::QueuedConnection,
-                Q_ARG(const QJsonObject&, buildJsonMsg(-1, QString(db.lastError().text())))
+                Q_ARG(const QJsonObject&, buildJsonMsg(0x000, QString("Authentication failed")))
         );
         return false;
     }
 
-    //好友关系查询
-    query.prepare("SELECT u.* FROM user_profiles u JOIN "
-                  "(SELECT user2_id AS friend_id FROM friendships WHERE user1_id = ? "
-                  "UNION SELECT user1_id AS friend_id FROM friendships WHERE user2_id = ? ) "
-                  "AS friends ON u.uid = friends.friend_id;");
+    // 第二次查询：获取好友关系
+    QSqlQuery queryFriends(db); // 使用新的查询对象
+    queryFriends.prepare("SELECT u.* FROM user_profiles u JOIN "
+                         "(SELECT user2_id AS friend_id FROM friendships WHERE user1_id = ? "
+                         "UNION SELECT user1_id AS friend_id FROM friendships WHERE user2_id = ? ) "
+                         "AS friends ON u.uid = friends.friend_id;");
 
-    query.addBindValue(root["uid"].toInt());
-    query.addBindValue(root["uid"].toInt());
+    queryFriends.addBindValue(root["uid"].toInt());
+    queryFriends.addBindValue(root["uid"].toInt());
 
-    if (!query.exec()) {
+    if (!queryFriends.exec()) {
         ConnectionPool::instance().releaseConnection(db);
         QMetaObject::invokeMethod(
                 object,
@@ -112,30 +125,33 @@ bool Login::loginResult(qint32 id, const QJsonObject &json) {
         return false;
     }
 
-    while (query.next()) {
+    while (queryFriends.next()) {
         QJsonArray data;
+        QJsonArray uidData;
         for (int i = 0; i < 8; ++i) {
-            data.append(query.value(i).toString());
-//            qDebug() << data;
+            data.append(queryFriends.value(i).toString());
         }
+        uidData.append(queryFriends.value(0).toString());
+
         friendships.append(data);
+        friendUid.append(uidData);
     }
 
-    // root.insert("friendships", friendships);
+    root.insert("friendships", friendUid);
+
     QJsonObject jsonObject = buildJsonMsg(0x001, QString("Success"));
     jsonObject.insert("friendships", friendships);
     jsonObject.insert("uid", root["uid"].toInt());
     jsonObject.insert("username", root["username"].toString());
+    jsonObject.insert("avatar", root["avatar"].toString());
 
-    qDebug() << "json UID" << jsonObject["uid"].toInt();
-    qDebug() << "json username" << jsonObject["username"].toString();
+    root.remove("avatar");
 
     QMetaObject::invokeMethod(
             object,
             "loginSuccess",
             Qt::QueuedConnection,
             Q_ARG(const QJsonObject&, root),
-//             Q_ARG(const QJsonObject&, buildJsonMsg(0x001, QString("Success"))),
             Q_ARG(const QJsonObject&, jsonObject)
     );
 

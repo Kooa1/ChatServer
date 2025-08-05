@@ -3,6 +3,7 @@
 
 #include "../include/tcpserver.h"
 #include "../include/connectionpool.h"
+#include "../include/deschandle.h"
 
 int main(int argc, char *argv[]) {
     try {
@@ -16,6 +17,7 @@ int main(int argc, char *argv[]) {
         qRegisterMetaType<QSharedPointer<QTcpSocket>>("QSharedPointer<QTcpSocket>");
         qRegisterMetaType<QSharedPointer<QTcpSocket>>();
 
+        qRegisterMetaType<User>("User");
         qRegisterMetaType<Task>("Task");
 
         //数据库连接

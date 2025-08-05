@@ -9,10 +9,24 @@ Transmit::Transmit() {
 }
 
 void Transmit::working(const QJsonObject &json) {
-    Task task(json);
     qDebug() << "start working";
 
-    qDebug() << task.sender;
-    qDebug() << task.recipient;
+    taskQueue.enqueue(json);
 
+    processTask();
 }
+
+
+void Transmit::processTask() {
+    QJsonObject object = taskQueue.dequeue();
+
+    object.remove("action");
+    object.insert("action", "receive");
+
+    qint32 recipient = object["recipient"].toVariant().toInt();
+
+    emit taskFinish(recipient, object);
+}
+
+
+

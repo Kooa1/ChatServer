@@ -10,6 +10,8 @@
 #include <QQueue>
 #include <QDateTime>
 #include <QJsonObject>
+#include <QMetaObject>
+#include <QMetaType>
 
 struct Task{
 //            {"action", "send"},
@@ -53,7 +55,13 @@ public slots:
     void working(const QJsonObject &);
 
 private:
-    QQueue<Task> taskQueue;
+    QQueue<QJsonObject> taskQueue;
+
+private:
+    void processTask();
+
+signals:
+    void taskFinish(const qint32, const QJsonObject &);
 };
 
 

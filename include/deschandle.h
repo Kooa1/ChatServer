@@ -63,7 +63,7 @@ public slots:
     void registerHandle(const QJsonObject &);
 
     //消息发送
-//    void sendMsg(const QJsonObject &);
+    void sendMsg(const qint32, const QJsonObject &);
 
     //任务分配
     void taskAssign(qint32, qint32, const QByteArray &);
@@ -88,6 +88,11 @@ private:
     QMutex userLock;
     //用户池
     QHash<qint32, User> userPool;
+
+    //连接池锁
+    QMutex tcpLock;
+    //连接池
+    QHash<qint32, User> tcpPool;
 
 private:
     //行为检测
