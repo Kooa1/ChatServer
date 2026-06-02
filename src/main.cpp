@@ -20,11 +20,11 @@ int main(int argc, char *argv[]) {
         qRegisterMetaType<User>("User");
         qRegisterMetaType<Task>("Task");
 
-        //数据库连接
-        const QString hostName = "8.148.211.115";
-        const QString dbName = "chat_app";
-        const QString userName = "root";
-        const QString pwd = "Wwz0530.";
+        //数据库连接 - 请修改为实际配置
+        const QString hostName = "your_host";
+        const QString dbName = "your_database";
+        const QString userName = "your_username";
+        const QString pwd = "your_password";
         quint16 port = 3306;
 
         //初始化数据库连接池
